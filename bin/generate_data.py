@@ -47,11 +47,13 @@ class DataGenerationModel:
         } 
 
         messages = [ 
-            {"role": "system", "content": "You are an NLU expert. Your task is to generate synthetic NLU training data for intent classification."}, 
-            {"role": "user", "content": f"Generate {num_samples} synthetic data samples for the intent: {prompt}"},
+            {"role": "system", "content": "You are an NLU expert, with a focus on NLU data generation."}, 
+            {"role": "user", "content": "Can you generate 5 queries for the intent `ac_on`?"}, 
+            {"role": "assistant", "content": "['Turn on the AC in the back of the car.', 'AC on', 'Put on the air con', 'Can you turn on AC?']"},
+            {"role": "user", "content": "How about {num_samples} queries for the intent {prompt}?"}, 
         ] 
 
-        output = pipe(tokenizer.apply_chat_template(messages), **generation_args) 
+        output = pipe(messages, **generation_args) 
         synthetic_data.append(output[0]['generated_text'], label="intent")
 
         return synthetic_data
