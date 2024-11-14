@@ -1,5 +1,5 @@
 from framework import calculate_perplexity, calculate_coherence, task_specific_performance, distinct_n
-from typing import Dict, Union, List, LiteralString
+from typing import Dict, Tuple, Union, List, LiteralString
 
 
 def evaluate_synthetic_data(
@@ -36,7 +36,7 @@ def evaluate_synthetic_data(
     results["coherence"] = coherence
     return results
 
-def calculate_metrics(text: LiteralString) -> Dict:
+def calculate_metrics(text: LiteralString) -> Tuple:
     perplexity = calculate_perplexity(text=text)
     diversity = distinct_n(text=text, n=3)
     coherence = calculate_coherence(text=text)

@@ -65,7 +65,7 @@ def calculate_perplexity(text, model=None, tokenizer=None):
         # Calculate perplexity
         perplexity = np.exp(mean_neg_log_likelihood)
     
-    return perplexity
+    return perplexity.astype(float)
 
 def distinct_n(text, n):
     """
@@ -78,9 +78,9 @@ def distinct_n(text, n):
     """
     tokens = text.split()
     n_grams = list(ngrams(tokens, n))
-    return len(set(n_grams)) / len(n_grams)
+    return float(len(set(n_grams)) / len(n_grams))
 
-def calculate_coherence(text, model = None):
+def calculate_coherence(text, model = None) -> float:
     """
     Calculate the coherence of a given text using a sentence embedding model.
     Args:
@@ -94,7 +94,8 @@ def calculate_coherence(text, model = None):
     sentences = text.split('.')
     embeddings = model.encode(sentences)
     similarities = cosine_similarity(embeddings)
-    return np.mean(similarities)
+    coherence = np.mean(similarities)
+    return coherence.astype(float)
 
 def task_specific_performance(train_data: DataSet, test_data: DataSet, model: Model):
     """

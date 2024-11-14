@@ -1,3 +1,13 @@
+"""
+Utility functions and classes for working with datasets and models.
+
+Author: Konrad Brüggemann
+
+University of Potsdam, 2024-2025
+
+Part of the Bachelor's Thesis: "Evaluating and Improving the Synthetic Data Generation Abilities of LLMs for Realistic NLU Training Data"
+"""
+
 import torch
 import pickle
 import pandas as pd
@@ -21,9 +31,9 @@ class DataSet:
         __iter__(): Returns an iterator for the dataset.
     """
 
-    def __init__(self, data, labels):
-        self.data = data
-        self.labels = labels
+    def __init__(self, data=None, labels=None):
+        self.data = data if data is not None else []
+        self.labels = labels if labels is not None else []
 
     def __len__(self):
         return len(self.data)
