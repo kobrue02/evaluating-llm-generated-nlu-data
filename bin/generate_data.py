@@ -1,4 +1,4 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 from utils import DataSet
 
@@ -29,12 +29,28 @@ class DataGenerationModel:
         tokenizer = tokenizer if tokenizer is not None else self.tokenizer
 
         synthetic_data = DataSet()
-        instruction_prompt = f"Generate {num_samples} synthetic NLU training queries similar to the following query: `{prompt}`. Return the queries in a list."
         
-        # call the model to generate synthetic data
-        input_ids = tokenizer.encode(instruction_prompt, return_tensors="pt", max_length=1024, truncation=True)
-        output = model.generate(input_ids, max_length=128, num_return_sequences=1, early_stopping=True)
-        synthetic_data.append(tokenizer.decode(output[0], skip_special_tokens=True), label="intent")
+        pipe = pipeline( 
+                "text-generation", 
+                model=model, 
+                tokenizer=tokenizer, 
+            ) 
+
+        generation_args = { 
+            "max_new_tokens": 500, 
+            "return_full_text": False, 
+            "temperature": 0.0, 
+            "do_sample": False, 
+        }
+
+        messages = [ 
+            {"role": "system", "content": "You are an NLU expert. Your task is to generate synthetic NLU training data for intent classification."}, 
+            {"role": "user", "content": f"Generate {num_samples} synthetic data samples for the intent: {prompt}"},
+        ] 
+
+        output = pipe(messages, **generation_args) 
+        synthetic_data.append(output[0]['generated_text'], label="intent")
+        
         return synthetic_data
 
 if __name__ == "__main__":
