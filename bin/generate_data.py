@@ -13,8 +13,8 @@ class DataGenerationModel:
             model (transformers.PreTrainedModel): The language model.
             tokenizer (transformers.PreTrainedTokenizer): The tokenizer.
         """
-        self.model = model if model is not None else AutoModelForCausalLM.from_pretrained("gpt2")
-        self.tokenizer = tokenizer if tokenizer is not None else AutoTokenizer.from_pretrained("gpt2")
+        self.model = model
+        self.tokenizer = tokenizer
 
     def generate_synthetic_data(self, prompt, model=None, tokenizer=None, num_samples=100) -> DataSet:
         """
