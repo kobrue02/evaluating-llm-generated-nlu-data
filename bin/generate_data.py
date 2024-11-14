@@ -36,6 +36,7 @@ class DataGenerationModel:
             "text-generation", 
             model=model, 
             tokenizer=tokenizer, 
+            device=0 if torch.cuda.is_available() else -1,
         ) 
 
         generation_args = { 
@@ -50,7 +51,7 @@ class DataGenerationModel:
             {"role": "user", "content": f"Generate {num_samples} synthetic data samples for the intent: {prompt}"},
         ] 
 
-        output = pipe(messages, **generation_args) 
+        output = pipe(tokenizer.apply_chat_template(messages), **generation_args) 
         synthetic_data.append(output[0]['generated_text'], label="intent")
 
         return synthetic_data
