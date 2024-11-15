@@ -38,8 +38,7 @@ class DataGenerationModel:
         pipe = pipeline( 
             "text-generation", 
             model=model, 
-            tokenizer=tokenizer, 
-            device=0 if torch.cuda.is_available() else -1,
+            tokenizer=tokenizer
         ) 
 
         generation_args = { 
