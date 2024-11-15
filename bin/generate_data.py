@@ -1,6 +1,7 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from utils import DataSet
 
+import ast
 import torch
 
 torch.random.manual_seed(0) 
@@ -16,7 +17,7 @@ class DataGenerationModel:
         self.model = model
         self.tokenizer = tokenizer
 
-    def generate_synthetic_data(self, prompt: list, query: str=None, model=None, tokenizer=None, num_samples=100) -> DataSet:
+    def generate_synthetic_data(self, prompt: list=None, query: str=None, model=None, tokenizer=None, num_samples=100) -> DataSet:
         """
         Generate synthetic data using a language model.
         Args:
@@ -58,8 +59,12 @@ class DataGenerationModel:
         else:
             messages = prompt
 
-        output = pipe(messages, **generation_args) 
-        synthetic_data.append(output[0]['generated_text'], label="intent")
+        output = pipe(messages, **generation_args)
+        try:
+            output_queries = ast.literal_eval(output[0]['generated_text'])
+        except ValueError:
+            output_queries = output[0]['generated_text']
+        synthetic_data.append(output_queries, label="intent")
 
         return synthetic_data
 
