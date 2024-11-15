@@ -68,6 +68,7 @@ class DataGenerationModel:
         output = pipe(messages, **generation_args)
         try:
             output_queries = ast.literal_eval(output[0]['generated_text'])
+            output_queries = output_queries[0][:num_samples]
         except (ValueError, SyntaxError) as e:
             output_queries = output[0]['generated_text']
         synthetic_data.append(output_queries, label="intent")
