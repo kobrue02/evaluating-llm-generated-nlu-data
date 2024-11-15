@@ -71,7 +71,7 @@ class DataGenerationModel:
             output_queries = output_queries
         except (ValueError, SyntaxError) as e:
             output_queries = output[0]['generated_text']
-        synthetic_data.extend(output_queries, label="intent")
+        synthetic_data.extend(output_queries, labels="intent")
 
         return synthetic_data
     
