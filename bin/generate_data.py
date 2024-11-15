@@ -16,7 +16,7 @@ class DataGenerationModel:
         self.model = model
         self.tokenizer = tokenizer
 
-    def generate_synthetic_data(self, prompt, model=None, tokenizer=None, num_samples=100) -> DataSet:
+    def generate_synthetic_data(self, prompt: str, model=None, tokenizer=None, num_samples=100) -> DataSet:
         """
         Generate synthetic data using a language model.
         Args:
@@ -27,8 +27,11 @@ class DataGenerationModel:
         Returns:
             List[str]: The synthetic data samples.
         """
-        model = model if model is not None else self.model
-        tokenizer = tokenizer if tokenizer is not None else self.tokenizer
+        if not model:
+            model = self.model
+        
+        if not tokenizer:
+            tokenizer = self.tokenizer
 
         synthetic_data = DataSet()
         
@@ -50,7 +53,7 @@ class DataGenerationModel:
             {"role": "system", "content": "You are an NLU expert, with a focus on NLU data generation."}, 
             {"role": "user", "content": "Can you generate 5 queries for the intent `ac_on`?"}, 
             {"role": "assistant", "content": "['Turn on the AC in the back of the car.', 'AC on', 'Put on the air con', 'Can you turn on AC?']"},
-            {"role": "user", "content": "How about {num_samples} queries for the intent {prompt}?"}, 
+            {"role": "user", "content": f"How about {num_samples} queries for the intent {prompt}?"}, 
         ] 
 
         output = pipe(messages, **generation_args) 
