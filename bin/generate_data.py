@@ -16,7 +16,7 @@ class DataGenerationModel:
         self.model = model
         self.tokenizer = tokenizer
 
-    def generate_synthetic_data(self, prompt: str, model=None, tokenizer=None, num_samples=100) -> DataSet:
+    def generate_synthetic_data(self, prompt: list, query: str=None, model=None, tokenizer=None, num_samples=100) -> DataSet:
         """
         Generate synthetic data using a language model.
         Args:
@@ -48,12 +48,15 @@ class DataGenerationModel:
             "do_sample": False, 
         } 
 
-        messages = [ 
-            {"role": "system", "content": "You are an NLU expert, with a focus on NLU data generation."}, 
-            {"role": "user", "content": "Can you generate 5 queries for the intent `ac_on`?"}, 
-            {"role": "assistant", "content": "['Turn on the AC in the back of the car.', 'AC on', 'Put on the air con', 'Can you turn on AC?']"},
-            {"role": "user", "content": f"How about {num_samples} queries for the intent {prompt}?"}, 
-        ] 
+        if not prompt:
+            messages = [ 
+                {"role": "system", "content": "You are an NLU expert, with a focus on NLU data generation."}, 
+                {"role": "user", "content": "Can you generate 5 queries for the intent `ac_on`?"}, 
+                {"role": "assistant", "content": "['Turn on the AC in the back of the car.', 'AC on', 'Put on the air con', 'Can you turn on AC?']"},
+                {"role": "user", "content": f"How about {num_samples} queries for the intent {query}? Please return the queries in Python list format."}, 
+            ]
+        else:
+            messages = prompt
 
         output = pipe(messages, **generation_args) 
         synthetic_data.append(output[0]['generated_text'], label="intent")
