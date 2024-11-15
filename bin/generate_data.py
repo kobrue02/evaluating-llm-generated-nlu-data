@@ -20,7 +20,7 @@ class DataGenerationModel:
         self.model = model
         self.tokenizer = tokenizer
 
-    def generate_synthetic_data(self, prompt: list=None, query: str=None, model=None, tokenizer=None, num_samples=100) -> DataSet:
+    def generate_synthetic_data(self, prompt: list=None, query: str=None, model=None, tokenizer=None, num_samples=100, intent=None) -> DataSet:
         """
         Generate synthetic data using the model.
 
@@ -71,7 +71,7 @@ class DataGenerationModel:
             output_queries = output_queries
         except (ValueError, SyntaxError) as e:
             output_queries = output[0]['generated_text']
-        synthetic_data.extend(output_queries, labels="intent")
+        synthetic_data.extend(output_queries, labels=[intent]*len(output_queries))
 
         return synthetic_data
     
