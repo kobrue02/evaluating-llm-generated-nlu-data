@@ -74,7 +74,7 @@ class DataGenerationModel:
 
         return synthetic_data
     
-def load_prompt(path: str=None,  id: int=None) -> Union[list[dict], str]:
+def load_prompt(path: str=None,  id: int=None, **kwargs) -> Union[list[dict], str]:
     """
     Load a prompt from a file.
     Args:
@@ -95,5 +95,20 @@ def load_prompt(path: str=None,  id: int=None) -> Union[list[dict], str]:
                 prompt = json.load(file)
         except FileNotFoundError:
             return []
+    else:
+        raise ValueError("Either path or id must be provided.")
+
+    if isinstance(prompt, str):
+        return prompt
+    else:
+        for i, message in enumerate(prompt):
+            if message.get("role") == "user":
+                prompt[i]["content"] = prompt[i]["content"].format(**kwargs)
+                    
     return prompt
+
+
+if __name__ == "__main__":
+    prompt = load_prompt(path="prompts/chat_template_basic.json", query="ac_on", num_samples=5)
+    print(prompt)
 
