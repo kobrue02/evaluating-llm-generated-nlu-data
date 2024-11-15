@@ -1,10 +1,13 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from typing import Union
+from transformers import pipeline
 from utils import DataSet
 
 import ast
+import json
 import torch
 
-torch.random.manual_seed(0) 
+torch.random.manual_seed(0)
+
 class DataGenerationModel:
 
     def __init__(self, *args, model=None, tokenizer=None):
@@ -19,14 +22,17 @@ class DataGenerationModel:
 
     def generate_synthetic_data(self, prompt: list=None, query: str=None, model=None, tokenizer=None, num_samples=100) -> DataSet:
         """
-        Generate synthetic data using a language model.
+        Generate synthetic data using the model.
+
         Args:
-            prompt (str): The prompt to generate data from.
+            prompt (list): The prompt to generate data from.
+            query (str): The query to generate data for.
             model (transformers.PreTrainedModel): The language model.
             tokenizer (transformers.PreTrainedTokenizer): The tokenizer.
             num_samples (int): The number of samples to generate.
+        
         Returns:
-            List[str]: The synthetic data samples.
+            DataSet: The synthetic data.
         """
         if not model:
             model = self.model
@@ -67,17 +73,27 @@ class DataGenerationModel:
         synthetic_data.append(output_queries, label="intent")
 
         return synthetic_data
+    
+def load_prompt(path: str=None,  id: int=None) -> Union[list[dict], str]:
+    """
+    Load a prompt from a file.
+    Args:
+        path (str): The path to the file.
+        id (int): The ID of the prompt to load.
+    Returns:
+        list: The prompt.
+    """
+    if path:
+        try:
+            with open(path, 'r', encoding='utf-8') as file:
+                prompt = json.load(file)
+        except FileNotFoundError:
+            return []
+    elif id:
+        try:
+            with open(f'prompts/{id}.json', 'r', encoding='utf-8') as file:
+                prompt = json.load(file)
+        except FileNotFoundError:
+            return []
+    return prompt
 
-if __name__ == "__main__":
-    # Load models
-    phi_model = AutoModelForCausalLM.from_pretrained("microsoft/phi-1_5")
-    phi_tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-1_5")
-
-    # Initialize data generation models
-    phi = DataGenerationModel(model=phi_model, tokenizer=phi_tokenizer)
-
-    # Generate synthetic data
-    prompt = "Turn on the AC in the back of the car."
-    phi_data = phi.generate_synthetic_data(prompt, num_samples=100)
-
-    print(phi_data)
