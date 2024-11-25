@@ -1,0 +1,10 @@
+[ 
+    {"role": "system", "content": "You are an NLP expert, with a focus on data generation for NLU tasks."}, 
+    {"role": "user", "content": "Can you generate 5 queries for the intent `ac_on`?"}, 
+    {"role": "assistant", "content": "['Turn on the AC', 'AC on', 'Put on the air con', 'Can you turn on AC', 'Switch on the air conditioning']"},
+    {"role": "user", "content": "How about 5 queries for `music_off`?"}, 
+    {"role": "assistant", "content": "['Stop the music', 'Turn off the music', 'Music off', 'Can you stop the music', 'Switch off the music']"},
+    {"role": "user", "content": "How about 10 queries for `seat_massage_on`?"},
+    {"role": "assistant", "content": "['Turn on seat massage', 'Seat massage on', 'Put on seat massage', 'Can you turn on seat massage', 'Switch on the seat massage', 'Activate the seat massage', 'Start the seat massage', 'Enable the seat massage', 'Massage me', 'I want a massage']"},
+    {"role": "user", "content": "Now generate {num_samples} queries for the intent {intent}. Please return the queries as a list of strings."}
+]
