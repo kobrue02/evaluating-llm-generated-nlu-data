@@ -9,7 +9,9 @@ import torch
 torch.random.manual_seed(0)
 
 class DataGenerationModel:
-
+    """
+    A class to generate synthetic data using a language model.
+    """
     def __init__(self, *args, model=None, tokenizer=None):
         """
         Initialize the data generation model.
@@ -110,6 +112,6 @@ def load_prompt(path: str=None,  id: int=None, **kwargs) -> Union[list[dict], st
 
 
 if __name__ == "__main__":
-    prompt = load_prompt(path="prompts/chat_template_basic.json", query="ac_on", num_samples=5)
+    prompt = load_prompt(path="prompts/chat_template_basic.json", intent="ac_on", num_samples=10)
     print(prompt)
 
