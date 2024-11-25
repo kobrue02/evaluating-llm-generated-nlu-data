@@ -72,7 +72,8 @@ class DataGenerationModel:
             output_queries = ast.literal_eval(output[0]['generated_text'])
             output_queries = output_queries
         except (ValueError, SyntaxError) as e:
-            output_queries = output[0]['generated_text']
+            print(f"Error: {e}")
+            return DataSet()
         synthetic_data.extend(output_queries, labels=[intent]*len(output_queries))
 
         return synthetic_data
