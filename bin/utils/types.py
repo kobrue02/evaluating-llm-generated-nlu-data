@@ -8,14 +8,11 @@ University of Potsdam, 2024-2025
 Part of the Bachelor's Thesis: "Evaluating and Improving the Synthetic Data Generation Abilities of LLMs for Realistic NLU Training Data"
 """
 
+from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 import torch
 import pickle
 import pandas as pd
-from sklearn.utils import shuffle
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-from sklearn.model_selection import train_test_split
-from torch.utils.data import TensorDataset
-
 
 class DataSet:
     """
@@ -151,9 +148,6 @@ class DataSet:
             self.data, self.labels, train_size=train_size, test_size=test_size, random_state=random_state)
         return DataSet(data_train, labels_train), DataSet(data_test, labels_test)
     
-    def to_tensor_dataset(self, tokenizer, max_length=512, padding=True, truncation=True):
-        return TensorDataset(*self.to_tensors(tokenizer, max_length, padding, truncation))
-    
     def to_tensors(self, tokenizer, max_length=512, padding=True, truncation=True):
         data = tokenizer(self.data, max_length=max_length, padding=padding, truncation=truncation, return_tensors="pt")
         labels = torch.tensor(self.labels)
@@ -236,92 +230,3 @@ class DataSet:
     
     def to_dict(self):
         return {"data": self.data, "labels": self.labels}
-
-class Model:
-    """
-    A class to represent a model.
-    Attributes:
-        model (torch.nn.Module): The model.
-        tokenizer (transformers.PreTrainedTokenizer): The tokenizer.
-    Methods:
-        __init__(model, tokenizer): Constructs a model with the given model and tokenizer.
-        __call__(text, max_length=512, padding=True, truncation=True): Returns the model output for the given text.
-        encode(text, max_length=512, padding=True, truncation=True): Returns the encoded representation of the text.
-        predict(text, max_length=512, padding=True, truncation=True): Returns the predicted label for the text.
-        generate(text, max_length=512, padding=True, truncation=True): Returns the generated text from the model.
-    """
-    def __init__(self, model, tokenizer):
-        self.model = model
-        self.tokenizer = tokenizer
-    
-    def __call__(self, text, max_length=512, padding=True, truncation=True):
-        inputs = self.tokenizer(text, max_length=max_length, padding=padding, truncation=truncation, return_tensors="pt")
-        return self.model(**inputs)
-    
-    def train(self, dataset, batch_size=32, num_epochs=1, learning_rate=5e-5):
-        """
-        Train the model on the given dataset.
-        Args:
-            dataset (DataSet): The dataset to train the model on.
-            batch_size (int): The batch size.
-            num_epochs (int): The number of epochs.
-            learning_rate (float): The learning rate.
-        Returns:
-            float: The loss of the model.
-            """
-        data, labels = dataset.to_tensors(self.tokenizer)
-        dataset = TensorDataset(data["input_ids"], data["attention_mask"], labels)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        optimizer = torch.optim.AdamW(self.model.parameters(), lr=learning_rate)
-        criterion = torch.nn.CrossEntropyLoss()
-        for _ in range(num_epochs):
-            for input_ids, attention_mask, labels in dataloader:
-                optimizer.zero_grad()
-                outputs = self.model(input_ids, attention_mask=attention_mask, labels=labels)
-                loss = outputs.loss
-                loss.backward()
-                optimizer.step()
-        return loss.item()
-    
-    def evaluate(self, dataset, batch_size=32):
-        """
-        Evaluate the model on the given dataset.
-        Args:
-            dataset (DataSet): The dataset to evaluate the model on.
-            batch_size (int): The batch size.
-        Returns:
-            dict: The evaluation results, containing different metrics, such as accuracy, F1 score, etc.
-        """
-        data, labels = dataset.to_tensors(self.tokenizer)
-        dataset = TensorDataset(data["input_ids"], data["attention_mask"], labels)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
-        predictions, targets = [], []
-        with torch.no_grad():
-            for input_ids, attention_mask, labels in dataloader:
-                outputs = self.model(input_ids, attention_mask=attention_mask)
-                predictions.extend(torch.argmax(outputs.logits, dim=1).tolist())
-                targets.extend(labels.tolist())
-        return {
-            "metrics": {
-                "accuracy": accuracy_score(targets, predictions), 
-                "f1": f1_score(targets, predictions, average="weighted"),
-                "precision": precision_score(targets, predictions, average="weighted"),
-                "recall": recall_score(targets, predictions, average="weighted"),
-                },
-            "predictions": predictions,
-            "targets": targets,
-            }
-    
-    
-    def encode(self, text, max_length=512, padding=True, truncation=True):
-        with torch.no_grad():
-            outputs = self(text, max_length, padding, truncation)
-        return outputs.last_hidden_state.mean(dim=1)
-    
-    def predict(self, text, max_length=512, padding=True, truncation=True):
-        outputs = self(text, max_length, padding, truncation)
-        return torch.argmax(outputs.logits, dim=1)
-    
-    def generate(self, text, max_length=512, padding=True, truncation=True):
-        outputs = self(text, max_length, padding, truncation)
-        return self.tokenizer.decode(outputs.logits.argmax(dim=2).squeeze())
