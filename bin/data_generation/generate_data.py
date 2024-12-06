@@ -53,7 +53,7 @@ class DataGenerationModel:
         try:
             output_queries = ast.literal_eval(output[0]['generated_text'])
             output_queries = output_queries
-        except (ValueError, SyntaxError) as e:
+        except (ValueError, SyntaxError, TypeError) as e:
             raise MalformedOutputError(f"Error parsing generated queries: {e}")
         
         synthetic_data.extend(
