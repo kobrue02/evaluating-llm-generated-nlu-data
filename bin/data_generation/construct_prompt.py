@@ -47,7 +47,7 @@ def load_prompt(path: str=None,  id: int=None, **kwargs) -> Prompt:
             return []
     elif id:
         try:
-            with open(f'prompts/{id}.json', 'r', encoding='utf-8') as file:
+            with open(f'bin/prompts/{id}.json', 'r', encoding='utf-8') as file:
                 prompt = json.load(file)
         except FileNotFoundError:
             return []
