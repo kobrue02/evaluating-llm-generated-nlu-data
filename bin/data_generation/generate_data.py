@@ -54,10 +54,10 @@ class DataGenerationModel:
             output_queries = ast.literal_eval(output[0]['generated_text'])
             if "Here are the queries:" in output_queries:
                 output_queries = [query for query in output_queries[output_queries.index("Here are the queries:")+1:] if query]
-            elif any([isinstance(query, list) for query in output_queries]):
+            if any([isinstance(query, list) for query in output_queries]):
                 output_queries = [query for query in [sublist for sublist in output_queries if isinstance(sublist, list)][0]]
-            else:
-                pass  # should be alright to proceed
+            if isinstance(output_queries, str):
+                output_queries = ast.literal_eval(output_queries)
         except (ValueError, SyntaxError, TypeError) as e:
             raise MalformedOutputError(f"Error parsing generated queries: {e}")
         
