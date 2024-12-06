@@ -1,5 +1,5 @@
 from transformers import pipeline
-from bin.data_generation.construct_prompt import Prompt
+from bin.data_generation.construct_prompt import Prompt, load_prompt
 from bin.utils.types import DataSet
 from bin.utils.exceptions import MalformedOutputError
 
@@ -62,7 +62,7 @@ class DataGenerationModel:
             )
         return synthetic_data
 
-    def build_dataset_from_intents(self, prompt: Prompt, intents: list[str]) -> DataSet:
+    def build_dataset_from_intents(self, prompt_id: str, intents: list[str]) -> DataSet:
         """
         Generate synthetic data from a list of intents.
 
@@ -74,6 +74,7 @@ class DataGenerationModel:
         """
         synthetic_data = DataSet()
         for intent in intents:
+            prompt = load_prompt(id=prompt_id, intent=intent)
             data = self.generate_synthetic_data(prompt)
             synthetic_data.extend(data.queries, labels=[intent]*len(data.queries))
         return synthetic_data
