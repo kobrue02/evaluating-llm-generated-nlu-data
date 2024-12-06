@@ -60,6 +60,8 @@ def load_prompt(path: str=None,  id: int=None, **kwargs) -> Prompt:
         for i, message in enumerate(prompt):
             if message.get("role") == "user":
                 prompt[i]["content"] = prompt[i]["content"].format(**kwargs)
+            if message.get("role") == "assistant":
+                prompt[i]["content"] = str(prompt[i]["content"])
                     
     return Prompt(prompt, intent=kwargs.get("intent"))
 
