@@ -1,0 +1,10 @@
+[ 
+    {
+        "role": "system",
+        "content": "You are an NLP expert, with a focus on data generation for NLU tasks."
+    }, 
+    {
+        "role": "user",
+        "content": "Generate {num_samples} German queries for the intent {intent}. Please return the queries as a list of strings."
+    }
+]

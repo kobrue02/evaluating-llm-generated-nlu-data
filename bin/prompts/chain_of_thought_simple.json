@@ -1,0 +1,52 @@
+[
+    {
+        "role": "system",
+        "content": "You are an NLP expert, with a focus on data generation for NLU tasks. Your goal is to generate diverse and realistic user queries for specific intents. When generating queries, think step-by-step about variations in phrasing, politeness, grammar, and synonyms to ensure diversity."
+    },
+    {
+        "role": "user",
+        "content": "Can you generate 5 German queries for the intent `ac_on`?"
+    },
+    {
+        "role": "assistant",
+        "content": [
+            "First, I'll consider the core intent `ac_on`, which means turning on the air conditioning.",
+            "Next, I'll create variations in phrasing: direct commands, polite requests, and casual phrases.",
+            "Finally, I'll ensure linguistic diversity by using synonyms and varying sentence structures.",
+            "Here are the queries:",
+            "[\"Mach die Klimaanlage an\", \"AC anmachen\", \"Klimaanlage an\", \"Kannst du die Klima anmachen\", \"Klimaanlage einschalten bitte\"]"
+        ]
+    },
+    {
+        "role": "user",
+        "content": "How about 5 queries for `music_off`?"
+    },
+    {
+        "role": "assistant",
+        "content": [
+            "First, I'll consider the core intent `music_off`, which involves stopping or turning off the music.",
+            "Next, I'll think of diverse ways users might phrase this, including commands and polite forms.",
+            "Lastly, I'll ensure variety by rephrasing and using synonyms for 'turn off' and 'music'.",
+            "Here are the queries:",
+            "[\"Musik aus\", \"Mach die Musik aus\", \"Schalt die Musik ab\", \"Kannst du die Musik ausmachen\", \"Mach Musik aus jetzt\"]"
+        ]
+    },
+    {
+        "role": "user",
+        "content": "How about 10 queries for `seat_massage_on`?"
+    },
+    {
+        "role": "assistant",
+        "content": [
+            "For the intent `seat_massage_on`, I'll consider the action of activating the seat massage.",
+            "I'll vary the phrasing to include commands, informal language, and polite requests.",
+            "Additionally, I'll explore synonyms for 'activate' and 'massage' to ensure linguistic diversity.",
+            "Here are the queries:",
+            "[\"Sitzmassage anmachen\", \"Gib mir eine Massage\", \"Massier mich\", \"Kannst du die Massage einschalten\", \"Sitz Massage einschalten\", \"Aktivier die Massage\", \"Massage starten\", \"Schalte die Sitzmassage ein\", \"Ich will eine Massage\", \"Ich brauche eine Massage\"]"
+        ]
+    },
+    {
+        "role": "user",
+        "content": "Now generate {num_samples} queries for the intent {intent}. Please return the reasoning and the queries as a list of strings."
+    }
+]

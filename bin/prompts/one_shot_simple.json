@@ -1,6 +1,24 @@
 [ 
-    {"role": "system", "content": "You are an NLP expert, with a focus on data generation for NLU tasks."}, 
-    {"role": "user", "content": "Can you generate 5 queries for the intent `ac_on`?"}, 
-    {"role": "assistant", "content": "['Turn on the AC', 'AC on', 'Put on the air con', 'Can you turn on AC', 'Switch on the air conditioning']"},
-    {"role": "user", "content": "Now generate {num_samples} queries for the intent {intent}. Please return the queries as a list of strings."}
+    {
+        "role": "system",
+        "content": "You are an NLP expert, with a focus on data generation for NLU tasks."
+    }, 
+    {
+        "role": "user",
+        "content": "Can you generate 5 queries for the intent `ac_on`?"
+    }, 
+    {
+        "role": "assistant",
+        "content": [
+            "Turn on the AC",
+            "AC on",
+            "Put on the air con",
+            "Can you turn on AC",
+            "Switch on the air conditioning"
+            ]
+    },
+    {
+        "role": "user",
+        "content": "Now generate {num_samples} queries for the intent {intent}. Please return the queries as a list of strings."
+    }
 ]

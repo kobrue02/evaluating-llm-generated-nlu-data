@@ -2,12 +2,12 @@ import numpy as np
 import torch
 
 from nltk import ngrams
-from transformers import AutoModelForMaskedLM, AutoTokenizer
+from transformers import AutoModelForMaskedLM, AutoModelForSequenceClassification, AutoTokenizer
 from sentence_transformers import SentenceTransformer
 from scipy.stats import entropy
 from sklearn.metrics.pairwise import cosine_similarity
 
-from utils import DataSet, Model
+from bin.utils.types import DataSet, Model
 
 
 def calculate_perplexity(text, model=None, tokenizer=None):

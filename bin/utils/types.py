@@ -17,7 +17,6 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import TensorDataset
 
 
-
 class DataSet:
     """
     A class to represent a dataset.
