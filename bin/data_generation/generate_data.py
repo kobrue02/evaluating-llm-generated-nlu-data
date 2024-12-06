@@ -87,7 +87,10 @@ class DataGenerationModel:
         synthetic_data = DataSet()
         for intent in tqdm(intents):
             prompt = load_prompt(id=prompt_id, intent=intent, num_samples=samples_per_intent)
-            data = self.generate_synthetic_data(prompt)
+            try:
+                data = self.generate_synthetic_data(prompt)
+            except MalformedOutputError:
+                continue
             synthetic_data += data
         return synthetic_data
 
