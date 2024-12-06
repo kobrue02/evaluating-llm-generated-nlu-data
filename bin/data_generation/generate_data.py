@@ -76,7 +76,7 @@ class DataGenerationModel:
         for intent in intents:
             prompt = load_prompt(id=prompt_id, intent=intent, num_samples=samples_per_intent)
             data = self.generate_synthetic_data(prompt)
-            synthetic_data.extend(data.queries, labels=[intent]*len(data.queries))
+            synthetic_data += data
         return synthetic_data
 
 
