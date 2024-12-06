@@ -62,7 +62,7 @@ class DataGenerationModel:
             )
         return synthetic_data
 
-    def build_dataset_from_intents(self, prompt_id: str, intents: list[str]) -> DataSet:
+    def build_dataset_from_intents(self, prompt_id: str, intents: list[str], samples_per_intent: int = 10) -> DataSet:
         """
         Generate synthetic data from a list of intents.
 
@@ -74,7 +74,7 @@ class DataGenerationModel:
         """
         synthetic_data = DataSet()
         for intent in intents:
-            prompt = load_prompt(id=prompt_id, intent=intent)
+            prompt = load_prompt(id=prompt_id, intent=intent, num_samples=samples_per_intent)
             data = self.generate_synthetic_data(prompt)
             synthetic_data.extend(data.queries, labels=[intent]*len(data.queries))
         return synthetic_data
