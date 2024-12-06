@@ -1,5 +1,7 @@
 from transformers import pipeline
+from tqdm import tqdm
 from bin.data_generation.construct_prompt import Prompt, load_prompt
+from bin.data_generation.consts import INTENTS, PROMPT_IDS
 from bin.utils.types import DataSet
 from bin.utils.exceptions import MalformedOutputError
 
@@ -83,7 +85,7 @@ class DataGenerationModel:
             DataSet: The synthetic data.
         """
         synthetic_data = DataSet()
-        for intent in intents:
+        for intent in tqdm(intents):
             prompt = load_prompt(id=prompt_id, intent=intent, num_samples=samples_per_intent)
             data = self.generate_synthetic_data(prompt)
             synthetic_data += data
