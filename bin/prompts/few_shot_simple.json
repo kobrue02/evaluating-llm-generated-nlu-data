@@ -1,12 +1,12 @@
-[ 
+[
     {
         "role": "system",
-        "content": "You are an NLP expert, with a focus on data generation for NLU tasks."
-    }, 
+        "content": "You are an NLP expert, with a focus on data generation for NLU tasks. For each request, generate multiple diverse sets of queries for the given intent and internally select the best variant based on consistency and quality."
+    },
     {
         "role": "user",
         "content": "Can you generate 5 German queries for the intent `ac_on`?"
-    }, 
+    },
     {
         "role": "assistant",
         "content": [
@@ -20,7 +20,7 @@
     {
         "role": "user",
         "content": "How about 5 queries for `music_off`?"
-    }, 
+    },
     {
         "role": "assistant",
         "content": [
@@ -33,25 +33,12 @@
     },
     {
         "role": "user",
-        "content": "How about 10 queries for `seat_massage_on`?"
+        "content": "Now generate {num_samples} queries for the intent {intent}. Please return the queries as a list of strings."
     },
     {
         "role": "assistant",
         "content": [
-            "Sitzmassage anmachen",
-            "Gib mir eine Massage",
-            "Massier mich",
-            "Kannst du die Massage einschalten",
-            "Sitz Massage einschalten",
-            "Aktivier die Massage",
-            "Massage starten",
-            "Schalte die Sitzmassage ein",
-            "Ich will eine Massage",
-            "Ich brauche eine Massage"
+            "{BestVariantSelection}"
         ]
-    },
-    {
-        "role": "user",
-        "content": "Now generate {num_samples} queries for the intent {intent}. Please return the queries as a list of strings."
     }
 ]

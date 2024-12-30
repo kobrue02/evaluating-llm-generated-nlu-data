@@ -1,10 +1,11 @@
 import numpy as np
 import torch
 
+from collections import defaultdict
 from nltk import ngrams
 from nltk.stem import Cistem
 from nltk.translate.bleu_score import sentence_bleu
-from transformers import AutoModelForMaskedLM, AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoModelForMaskedLM, AutoTokenizer
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -102,23 +103,6 @@ class Framework:
         n_grams = list(ngrams(tokens, n))
         return float(len(set(n_grams)) / len(n_grams))
 
-    def calculate_coherence(self, text, model = None) -> float:
-        """
-        Calculate the coherence of a given text using a sentence embedding model.
-        Args:
-            text (str): The text to calculate the coherence of.
-            model (sentence_transformers.SentenceTransformer): The sentence embedding model.
-        Returns:
-            float: The coherence of the text.
-        """
-        if not model:
-            model = SentenceTransformer('all-MiniLM-L6-v2')
-        sentences = text.split('.')
-        embeddings = model.encode(sentences)
-        similarities = cosine_similarity(embeddings)
-        coherence = np.mean(similarities)
-        return coherence.astype(float)
-
     def type_token_ratio(self, text):
         """
         Calculate the type-token ratio of a given text using the Cistem stemmer.
@@ -177,7 +161,7 @@ class Framework:
         metrics = results['metrics']
         return metrics['f1']
 
-    def inter_sentence_similarity(self, sentences: list, model = None):
+    def inter_sentence_similarity(self, sentences: list, model=None):
         """
         Calculate the inter-sentence similarity of a list of sentences using a sentence embedding model.
         Args:
@@ -188,35 +172,66 @@ class Framework:
         """
         if not model:
             model = SentenceTransformer('all-MiniLM-L6-v2')
+        
+        if not sentences or len(sentences) < 2:
+            raise ValueError("At least two sentences are required to compute inter-sentence similarity.")
+        
+        # Generate embeddings
         embeddings = model.encode(sentences)
+        
+        # Ensure embeddings are 2D
+        if embeddings.ndim == 1:
+            embeddings = embeddings.reshape(1, -1)
+        
+        # Calculate cosine similarities
         similarities = cosine_similarity(embeddings)
-        inter_sentence_similarity = np.mean(similarities)
+        
+        # Exclude diagonal (self-similarity) elements and compute the mean
+        n = similarities.shape[0]
+        sum_of_similarities = np.sum(similarities) - np.sum(np.diag(similarities))  # Exclude diagonal
+        num_comparisons = n * (n - 1)  # Total number of off-diagonal elements
+        
+        inter_sentence_similarity = sum_of_similarities / num_comparisons
         return inter_sentence_similarity
-    
-    def discourse_coherence(self, text: str, model = None) -> float:
-        """
-        Calculate the discourse coherence of a given text using the entity grid model.
-        Args:
-            text (str): The text to calculate the coherence of.
-            model (Model): The entity grid model.
-        Returns:
-            float: The discourse coherence of the text.
-        """
-        if not model:
-            model = AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-imdb")
-        # Tokenize input text
-        tokenizer = AutoTokenizer.from_pretrained("textattack/bert-base-uncased-imdb")
-        encodings = tokenizer(text, return_tensors='pt')
-        input_ids = encodings.input_ids
-        attention_mask = encodings.attention_mask
-        # Predict entity grid labels
-        with torch.no_grad():
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            logits = outputs.logits
-            labels = torch.argmax(logits, dim=1)
-        # Calculate coherence
-        coherence = torch.mean(labels).item()
-        return coherence
+
+    def create_entity_grid(self, sentences):
+        entities = defaultdict(lambda: ['_'] * len(sentences))
+        
+        for i, sentence in enumerate(sentences):
+            for entity, role in self.extract_entities(sentence):
+                entities[entity][i] = role
+        
+        return entities
+
+    def extract_entities(self, sentence):
+        # This is a simplified version. In practice, you'd use NLP tools
+        # to extract entities and their syntactic roles (S, O, X)
+        entities = []
+        for word in sentence.split():
+            if word.istitle():
+                entities.append((word, 'S'))  # Assume all capitalized words are subjects
+        return entities
+
+    def compute_transitions(self, grid):
+        transitions = defaultdict(int)
+        for entity_mentions in grid.values():
+            for i in range(len(entity_mentions) - 1):
+                transition = (entity_mentions[i], entity_mentions[i+1])
+                transitions[transition] += 1
+        return transitions
+
+    def discourse_coherence(self, sentences):
+        grid = self.create_entity_grid(sentences)
+        transitions = self.compute_transitions(grid)
+        
+        # Calculate probabilities of transitions
+        total_transitions = sum(transitions.values())
+        probabilities = {t: count / total_transitions for t, count in transitions.items()}
+        
+        # Calculate coherence score (e.g., using entropy)
+        coherence_score = -sum(p * np.log2(p) for p in probabilities.values() if p > 0)
+        
+        return coherence_score
 
     def apply_framework(self, references: list | str, hypotheses: list | str) -> dict:
         """
@@ -234,9 +249,6 @@ class Framework:
         # Calculate distinct-2
         distinct_2 = self.distinct_n(hypotheses, 2)
         results['distinct_2'] = distinct_2
-        # Calculate coherence
-        coherence = self.calculate_coherence(hypotheses)
-        results['coherence'] = coherence
         # Calculate type-token ratio
         ttr = self.type_token_ratio(hypotheses)
         results['ttr'] = ttr
@@ -244,8 +256,15 @@ class Framework:
         moving_average_ttr = self.moving_average_ttr(hypotheses)
         results['moving_average_ttr'] = moving_average_ttr
         # Calculate BLEU score
-        bleu_score = self.bleu_score(hypotheses, hypotheses)
+        bleu_score = self.bleu_score(hypotheses, references)
         results['bleu_score'] = bleu_score
+        # Discourse coherence
+        discourse_coherence = self.discourse_coherence(hypotheses)
+        results['discourse_coherence'] = discourse_coherence
+        # Inter-sentence similarity
+        inter_sentence_similarity = self.inter_sentence_similarity(hypotheses)
+        results['inter_sentence_similarity'] = inter_sentence_similarity
+        
         return results
 
 

@@ -1,0 +1,23 @@
+[ 
+    {
+        "role": "system",
+        "content": "You are an NLP expert, with a focus on data generation for NLU tasks."
+    }, 
+    {
+        "role": "user",
+        "content": "Can you generate 5 queries for the intent `ac_on`? {\"sentiment\": 0.25, \"complexity\": \"0.25\", \"max_length\": \"5\"}"
+    }, 
+    {
+        "role": "assistant",
+        "content": [
+            "Turn on the AC",
+            "AC on",
+            "Put on the air con",
+            "Can you turn on AC"
+            ]
+    },
+    {
+        "role": "user",
+        "content": "Now generate {num_samples} queries for the intent {intent}. {\"sentiment\": 0.5, \"complexity\": \"0.5\", \"max_length\": \"7\"} Please return the queries as a list of strings."
+    }
+]
