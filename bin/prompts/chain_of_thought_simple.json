@@ -47,6 +47,6 @@
     },
     {
         "role": "user",
-        "content": "Now generate {num_samples} queries for the intent {intent}. Please return the reasoning and the queries as a list of strings."
+        "content": "Now generate {num_samples} queries for the intent {intent}."
     }
 ]
