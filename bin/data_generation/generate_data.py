@@ -9,10 +9,12 @@ import torch
 
 torch.random.manual_seed(0)
 
+
 class DataGenerationModel:
     """
     A class to generate synthetic data using a language model.
     """
+
     def __init__(self, *args, model=None, tokenizer=None):
         """
         Initialize the data generation model.
@@ -29,68 +31,78 @@ class DataGenerationModel:
 
         Args:
             prompt (Prompt): The prompt to generate data from.
-        
+
         Returns:
             DataSet: The synthetic data.
         """
         synthetic_data = DataSet()
-        
-        pipe = pipeline( 
-            "text-generation", 
-            model=self.model, 
-            tokenizer=self.tokenizer
-        ) 
 
-        generation_args = { 
-            "max_new_tokens": 500, 
-            "return_full_text": False, 
-            "temperature": 0.0, 
-            "do_sample": False, 
-        } 
+        pipe = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+
+        generation_args = {
+            "max_new_tokens": 500,
+            "return_full_text": False,
+            "temperature": 0.0,
+            "do_sample": False,
+        }
 
         messages = list(prompt)
         output = pipe(messages, **generation_args)
 
         try:
-            output_queries = ast.literal_eval(output[0]['generated_text'])
+            output_queries = ast.literal_eval(output[0]["generated_text"])
             if "Here are the queries:" in output_queries:
-                output_queries = [query for query in output_queries[output_queries.index("Here are the queries:")+1:] if query]
+                output_queries = [
+                    query
+                    for query in output_queries[
+                        output_queries.index("Here are the queries:") + 1 :
+                    ]
+                    if query
+                ]
             if any([isinstance(query, list) for query in output_queries]):
-                output_queries = [query for query in [sublist for sublist in output_queries if isinstance(sublist, list)][0]]
+                output_queries = [
+                    query
+                    for query in [
+                        sublist
+                        for sublist in output_queries
+                        if isinstance(sublist, list)
+                    ][0]
+                ]
 
             # If the output is a string, convert it to a list
             if isinstance(output_queries, str):
                 output_queries = ast.literal_eval(output_queries)
             else:
                 output_queries = [query for query in output_queries if query]
-        
+
         except (ValueError, SyntaxError, TypeError) as e:
             raise MalformedOutputError(f"Error parsing generated queries: {e}")
-        
+
         synthetic_data.extend(
-            output_queries,
-            labels=[prompt.intent]*len(output_queries)
-            )
+            output_queries, labels=[prompt.intent] * len(output_queries)
+        )
         return synthetic_data
 
-    def build_dataset_from_intents(self, prompt_id: str, intents: list[str], samples_per_intent: int = 10) -> DataSet:
+    def build_dataset_from_intents(
+        self, prompt_id: str, intents: list[str], samples_per_intent: int = 10
+    ) -> DataSet:
         """
         Generate synthetic data from a list of intents.
 
         Args:
             intents (list[str]): The intents to generate data from.
-        
+
         Returns:
             DataSet: The synthetic data.
         """
         synthetic_data = DataSet()
         for intent in tqdm(intents):
-            prompt = load_prompt(id=prompt_id, intent=intent, num_samples=samples_per_intent)
+            prompt = load_prompt(
+                id=prompt_id, intent=intent, num_samples=samples_per_intent
+            )
             try:
                 data = self.generate_synthetic_data(prompt)
             except MalformedOutputError:
                 continue
             synthetic_data += data
         return synthetic_data
-
-

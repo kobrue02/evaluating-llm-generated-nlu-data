@@ -13,24 +13,25 @@ class Prompt:
     """
     A class to represent a prompt.
     """
-    def __init__(self, prompt: List[Dict], intent: str=None):
+
+    def __init__(self, prompt: List[Dict], intent: str = None):
         self.prompt = prompt
         self.intent = intent
-    
+
     def __str__(self):
         return json.dumps(self.prompt, indent=4)
-    
+
     def __repr__(self):
         return str(self.prompt)
-    
+
     def __len__(self):
         return len(self.prompt)
-    
+
     def __iter__(self):
         return iter(self.prompt)
 
 
-def load_prompt(path: str=None,  id: int=None, **kwargs) -> Prompt:
+def load_prompt(path: str = None, id: int = None, **kwargs) -> Prompt:
     """
     Load a prompt from a file.
     Args:
@@ -41,13 +42,13 @@ def load_prompt(path: str=None,  id: int=None, **kwargs) -> Prompt:
     """
     if path:
         try:
-            with open(path, 'r', encoding='utf-8') as file:
+            with open(path, "r", encoding="utf-8") as file:
                 prompt = json.load(file)
         except FileNotFoundError:
             return []
     elif id:
         try:
-            with open(f'bin/prompts/{id}.json', 'r', encoding='utf-8') as file:
+            with open(f"bin/prompts/{id}.json", "r", encoding="utf-8") as file:
                 prompt = json.load(file)
         except FileNotFoundError:
             return []
@@ -62,10 +63,12 @@ def load_prompt(path: str=None,  id: int=None, **kwargs) -> Prompt:
                 prompt[i]["content"] = prompt[i]["content"].format(**kwargs)
             if message.get("role") == "assistant":
                 prompt[i]["content"] = str(prompt[i]["content"])
-                    
+
     return Prompt(prompt, intent=kwargs.get("intent"))
 
 
 if __name__ == "__main__":
-    prompt = load_prompt(path="bin/prompts/chain_of_thought_simple.json", intent="ac_on", num_samples=10)
+    prompt = load_prompt(
+        path="bin/prompts/chain_of_thought_simple.json", intent="ac_on", num_samples=10
+    )
     print(prompt)

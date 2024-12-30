@@ -48,7 +48,7 @@ INTENTS = [
     "product_feedback",
     "report_issue",
     "ask_for_suggestions",
-    "chatbot_feedback"
+    "chatbot_feedback",
 ]
 
 PROMPT_IDS = [
@@ -56,7 +56,7 @@ PROMPT_IDS = [
     "one_shot_simple",
     "chain_of_thought_simple",
     "zero_shot_simple",
-    "persona_based_prompt_s1"
+    "persona_based_prompt_s1",
 ]
 
 NUM_SAMPLES = 10
