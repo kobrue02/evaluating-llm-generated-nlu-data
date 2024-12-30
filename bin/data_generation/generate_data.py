@@ -1,7 +1,6 @@
 from transformers import pipeline
 from tqdm import tqdm
 from bin.data_generation.construct_prompt import Prompt, load_prompt
-from bin.data_generation.consts import INTENTS, PROMPT_IDS
 from bin.utils.types import DataSet
 from bin.utils.exceptions import MalformedOutputError
 

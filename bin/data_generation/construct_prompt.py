@@ -4,7 +4,7 @@ Functions for loading prompts.
 Author: Konrad Brüggemann
 """
 
-from typing import Union, List, Dict
+from typing import List, Dict
 
 import json
 
