@@ -6,6 +6,7 @@ import json
 import logging
 import math
 import numpy as np
+import pandas as pd
 import torch
 
 from collections import defaultdict
@@ -316,6 +317,21 @@ class Framework:
         for example in data:
             reference = example["reference"]
             hypothesis = example["hypothesis"]
+            result = self.__apply_framework(reference, hypothesis)
+            results.append(result)
+        return results
+    
+    def apply_framework_to_datasets(self, golden_data: pd.DataFrame, generated_data: pd.DataFrame):
+        """
+        Apply the framework to a text generation model.
+        Returns:
+            dict: The results of the evaluation.
+        """
+        intents = golden_data.intent.unique()
+        results = []
+        for intent in intents:
+            reference = golden_data[golden_data.intent == intent].text.tolist()
+            hypothesis = generated_data[generated_data.intent == intent].text.tolist()
             result = self.__apply_framework(reference, hypothesis)
             results.append(result)
         return results
