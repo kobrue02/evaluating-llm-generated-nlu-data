@@ -128,7 +128,10 @@ class DataSet:
 
     def sort(self, key=None, reverse=False):
         if key is None:
-            key = lambda x: x
+
+            def key(x):
+                return x
+
         self.data.sort(key=key, reverse=reverse)
         self.labels.sort(key=key, reverse=reverse)
 
@@ -165,7 +168,7 @@ class DataSet:
         labels = torch.tensor(self.labels)
         return data, labels
 
-    def to_data_frame(self, columns=None):
+    def to_data_frame(self, columns: list[str] = None):
         if columns is None:
             columns = ["data", "labels"]
         return pd.DataFrame({columns[0]: self.data, columns[1]: self.labels})

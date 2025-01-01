@@ -51,9 +51,10 @@ class Framework:
         self.g_tokenizer = AutoTokenizer.from_pretrained(
             "google-bert/bert-base-german-cased"
         )
+        self.logger = logging.getLogger(__name__)
 
     def calculate_perplexity(
-        self, text, model=None, tokenizer=None, base=2, max_perplexity=10000
+        self, text: str | list, model=None, tokenizer=None, base=2, max_perplexity=10000
     ):
         """
         Calculate the perplexity of a given text using BERT's masked language modeling.
@@ -66,14 +67,26 @@ class Framework:
         Returns:
             float: The perplexity of the text.
         """
-        inputs = self.g_tokenizer(text, return_tensors="pt")
-        with torch.no_grad():
-            outputs = self.g_model(**inputs, labels=inputs["input_ids"])
-        loss = outputs.loss
-        perplexity = math.exp(loss.item())
-        return 1 - (math.log(perplexity, base) / math.log(max_perplexity, base))
 
-    def distinct_n(self, text, n):
+        if isinstance(text, str):
+            text = [text]
+        scores = []
+        for t in text:
+            if not t:
+                return 0.0
+            inputs = self.g_tokenizer(
+                text, return_tensors="pt", padding=True, truncation=True
+            )
+            with torch.no_grad():
+                outputs = self.g_model(**inputs, labels=inputs["input_ids"])
+            loss = outputs.loss
+            perplexity = math.exp(loss.item())
+            scores.append(
+                1 - (math.log(perplexity, base) / math.log(max_perplexity, base))
+            )
+        return np.mean(scores)
+
+    def distinct_n(self, text: str | list, n):
         """
         Calculate the distinct-n metric of a given text.
         Args:
@@ -82,9 +95,15 @@ class Framework:
         Returns:
             float: The distinct-n of the text.
         """
-        tokens = text.split()
-        n_grams = list(ngrams(tokens, n))
-        return float(len(set(n_grams)) / len(n_grams))
+        if isinstance(text, str):
+            text = [text]
+        distincts = []
+        for t in text:
+            tokens = t.split()
+            ngrams_list = list(ngrams(tokens, n))
+            distinct = len(set(ngrams_list)) / len(ngrams_list)
+            distincts.append(distinct)
+        return np.mean(distincts)
 
     def type_token_ratio(self, text):
         """
@@ -94,9 +113,17 @@ class Framework:
         Returns:
             float: The type-token ratio of the text.
         """
-        tokens = text.split()
-        types = set([self.cistem.stem(token) for token in tokens])
-        return len(types) / len(tokens)
+        if not text:
+            return 0.0
+        elif isinstance(text, str):
+            text = [text]
+        ttrs = []
+        for t in text:
+            tokens = t.split()
+            types = set([self.cistem.stem(token) for token in tokens])
+            ttr = len(types) / len(tokens)
+            ttrs.append(ttr)
+        return np.mean(ttrs)
 
     def moving_average_ttr(self, text, window_size=100):
         """
@@ -108,12 +135,17 @@ class Framework:
             list: The moving average type-token ratio of the text.
         """
         ttrs = []
-        for i in range(0, len(text), window_size):
-            window = text[i : i + window_size]
-            ttrs.append(self.type_token_ratio(window))
+        if isinstance(text, str):
+            text = [text]
 
-        moving_average = np.mean(ttrs)
-        return moving_average
+        for t in text:
+            tokens = t.split()
+            for i in range(len(tokens) - window_size):
+                window = tokens[i : i + window_size]
+                window_types = set([self.cistem.stem(token) for token in window])
+                ttr = len(window_types) / len(window)
+                ttrs.append(ttr)
+        return np.mean(ttrs)
 
     def bleu_score(self, hypothesis: str, reference: str) -> float:
         """
@@ -125,15 +157,25 @@ class Framework:
             float: The BLEU score of the hypothesis.
         """
 
+        if isinstance(hypothesis, str):
+            hypotheses = [hypothesis]
+        else:
+            hypotheses = hypothesis
+
         if isinstance(reference, str):
             references = [reference.split()]
         else:
             references = [r.split() for r in reference]
-        return sentence_bleu(
-            references,
-            hypothesis.split(),
-            smoothing_function=SmoothingFunction().method4,
-        )
+
+        bleu_scores = []
+        for text in hypotheses:
+            bleu = sentence_bleu(
+                references,
+                text.split(),
+                smoothing_function=SmoothingFunction().method4,
+            )
+            bleu_scores.append(bleu)
+        return np.mean(bleu_scores)
 
     def task_specific_performance(
         self, train_data: DataSet, test_data: DataSet, model=None
@@ -155,7 +197,7 @@ class Framework:
         metrics = results["metrics"]
         return metrics["f1"]
 
-    def inter_sentence_similarity(self, sentences: list, model=None):
+    def inter_sentence_similarity(self, sentences: list[str], model=None):
         """
         Calculate the inter-sentence similarity of a list of sentences using a sentence embedding model.
         Args:
@@ -165,9 +207,14 @@ class Framework:
             float: The inter-sentence similarity of the sentences.
         """
 
+        if isinstance(sentences, str):
+            sentences = [sentences]
+
         if not sentences or len(sentences) < 2:
             raise ValueError(
-                "At least two sentences are required to compute inter-sentence similarity."
+                "At least two sentences are required to compute inter-sentence similarity. Provided sentences: {}".format(
+                    str(sentences)
+                )
             )
 
         # Generate embeddings
@@ -279,30 +326,39 @@ class Framework:
         # Calculate perplexity
         perplexity = self.calculate_perplexity(hypotheses)
         results["perplexity"] = perplexity
+        self.logger.info(perplexity)
         # Calculate distinct-1
         distinct_1 = self.distinct_n(hypotheses, 1)
         results["distinct_1"] = distinct_1
+        self.logger.info(distinct_1)
         # Calculate distinct-2
         distinct_2 = self.distinct_n(hypotheses, 2)
         results["distinct_2"] = distinct_2
+        self.logger.info(distinct_2)
         # Calculate type-token ratio
         ttr = self.type_token_ratio(hypotheses)
         results["ttr"] = ttr
+        self.logger.info(ttr)
         # Calculate moving average TTR
         moving_average_ttr = self.moving_average_ttr(hypotheses)
         results["moving_average_ttr"] = moving_average_ttr
+        self.logger.info(moving_average_ttr)
         # Calculate BLEU score
         bleu_score = self.bleu_score(hypotheses, references)
         results["bleu_score"] = bleu_score
+        self.logger.info(bleu_score)
         # Discourse coherence
         discourse_coherence = self.discourse_coherence(hypotheses)
         results["discourse_coherence"] = discourse_coherence
+        self.logger.info(discourse_coherence)
         # Inter-sentence similarity
         inter_sentence_similarity = self.inter_sentence_similarity(hypotheses)
         results["inter_sentence_similarity"] = inter_sentence_similarity
+        self.logger.info(inter_sentence_similarity)
         # Centroid distance
         centroid_distance = self.distance_to_centroid(hypotheses)
         results["centroid_distance"] = centroid_distance
+        self.logger.info(centroid_distance)
 
         joint_score = np.mean(list(results.values()))
         return {"results": dict(results), "joint_score": joint_score}
@@ -320,21 +376,28 @@ class Framework:
             result = self.__apply_framework(reference, hypothesis)
             results.append(result)
         return results
-    
-    def apply_framework_to_datasets(self, golden_data: pd.DataFrame, generated_data: pd.DataFrame):
+
+    def apply_framework_to_datasets(
+        self, golden_data: pd.DataFrame, generated_data: pd.DataFrame
+    ):
         """
         Apply the framework to a text generation model.
         Returns:
             dict: The results of the evaluation.
         """
-        intents = golden_data.intent.unique()
+        intents = [
+            intent for intent in golden_data.intent.unique() if intent is not None
+        ]
         results = []
         for intent in intents:
-            reference = golden_data[golden_data.intent == intent].text.tolist()
-            hypothesis = generated_data[generated_data.intent == intent].text.tolist()
-            result = self.__apply_framework(reference, hypothesis)
-            results.append(result)
+            references = golden_data[golden_data.intent == intent].text.tolist()
+            hypotheses = generated_data[generated_data.intent == intent].text.tolist()
+            if not hypotheses or not references:
+                continue
+            result = self.__apply_framework(references, hypotheses)
+            results.append({intent: result})
         return results
+
 
 if __name__ == "__main__":
 
