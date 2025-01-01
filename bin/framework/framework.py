@@ -2,7 +2,9 @@ import os
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
+import json
 import logging
+import math
 import numpy as np
 import torch
 
@@ -16,6 +18,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import KMeans
 
 from bin.utils.types import DataSet
+from bin.framework.example_data import EXAMPLES
 
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
@@ -41,8 +44,16 @@ class Framework:
     def __init__(self):
         self.cistem = Cistem()
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.g_model = AutoModelForMaskedLM.from_pretrained(
+            "google-bert/bert-base-german-cased"
+        )
+        self.g_tokenizer = AutoTokenizer.from_pretrained(
+            "google-bert/bert-base-german-cased"
+        )
 
-    def calculate_perplexity(self, text, model=None, tokenizer=None):
+    def calculate_perplexity(
+        self, text, model=None, tokenizer=None, base=2, max_perplexity=10000
+    ):
         """
         Calculate the perplexity of a given text using BERT's masked language modeling.
 
@@ -54,56 +65,12 @@ class Framework:
         Returns:
             float: The perplexity of the text.
         """
-        if model is None:
-            model = AutoModelForMaskedLM.from_pretrained("bert-base-uncased")
-        if tokenizer is None:
-            tokenizer = AutoTokenizer.from_pretrained(
-                "bert-base-uncased", clean_up_tokenization_spaces=True
-            )
-
-        print(
-            f"Loaded model {model.__class__.__name__} and tokenizer {tokenizer.__class__.__name__}"
-        )
-
-        # Tokenize input text
-        encodings = tokenizer(text, return_tensors="pt")
-        input_ids = encodings.input_ids
-
-        # Create attention mask
-        attention_mask = encodings.attention_mask
-
-        # Calculate token likelihoods
+        inputs = self.g_tokenizer(text, return_tensors="pt")
         with torch.no_grad():
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            logits = outputs.logits
-
-            # Calculate log probabilities
-            log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
-
-            # Get the log probability of each actual token
-            token_log_probs = log_probs[0, range(len(input_ids[0])), input_ids[0]]
-
-            # Get special tokens mask and convert to tensor
-            special_tokens_mask = torch.tensor(
-                tokenizer.get_special_tokens_mask(
-                    input_ids[0].tolist(), already_has_special_tokens=True
-                ),
-                dtype=torch.bool,
-            )
-
-            # Invert mask to get non-special tokens
-            non_special_tokens_mask = ~special_tokens_mask
-
-            # Calculate perplexity only on non-special tokens
-            non_special_token_log_probs = token_log_probs[non_special_tokens_mask]
-
-            # Calculate mean negative log likelihood
-            mean_neg_log_likelihood = -non_special_token_log_probs.mean().item()
-
-            # Calculate perplexity
-            perplexity = np.exp(mean_neg_log_likelihood)
-
-        return perplexity.astype(float)
+            outputs = self.g_model(**inputs, labels=inputs["input_ids"])
+        loss = outputs.loss
+        perplexity = math.exp(loss.item())
+        return 1 - (math.log(perplexity, base) / math.log(max_perplexity, base))
 
     def distinct_n(self, text, n):
         """
@@ -220,9 +187,12 @@ class Framework:
         num_comparisons = n * (n - 1)  # Total number of off-diagonal elements
 
         inter_sentence_similarity = sum_of_similarities / num_comparisons
-        return inter_sentence_similarity or 0.0
+        if math.isnan(inter_sentence_similarity):
+            return 0.0
+        return inter_sentence_similarity
 
     def create_entity_grid(self, sentences):
+        """Create an entity grid from a list of sentences."""
         entities = defaultdict(lambda: ["_"] * len(sentences))
 
         for i, sentence in enumerate(sentences):
@@ -232,6 +202,7 @@ class Framework:
         return entities
 
     def extract_entities(self, sentence):
+        """Extract entities and their syntactic roles from a sentence."""
         # This is a simplified version. In practice, you'd use NLP tools
         # to extract entities and their syntactic roles (S, O, X)
         entities = []
@@ -243,6 +214,7 @@ class Framework:
         return entities
 
     def compute_transitions(self, grid):
+        """Compute transitions between entity mentions in a grid of sentences."""
         transitions = defaultdict(int)
         for entity_mentions in grid.values():
             for i in range(len(entity_mentions) - 1):
@@ -251,6 +223,7 @@ class Framework:
         return transitions
 
     def discourse_coherence(self, sentences):
+        """Calculate the coherence of a list of sentences using the entity grid model."""
         grid = self.create_entity_grid(sentences)
         transitions = self.compute_transitions(grid)
 
@@ -295,7 +268,7 @@ class Framework:
         kmeans.fit(embeddings)
         return kmeans.cluster_centers_
 
-    def apply_framework(self, references: list | str, hypotheses: list | str) -> dict:
+    def __apply_framework(self, references: list | str, hypotheses: list | str) -> dict:
         """
         Apply the framework to a text generation model.
         Returns:
@@ -324,22 +297,31 @@ class Framework:
         discourse_coherence = self.discourse_coherence(hypotheses)
         results["discourse_coherence"] = discourse_coherence
         # Inter-sentence similarity
-        # inter_sentence_similarity = self.inter_sentence_similarity(hypotheses)
-        # results['inter_sentence_similarity'] = inter_sentence_similarity
+        inter_sentence_similarity = self.inter_sentence_similarity(hypotheses)
+        results["inter_sentence_similarity"] = inter_sentence_similarity
         # Centroid distance
         centroid_distance = self.distance_to_centroid(hypotheses)
         results["centroid_distance"] = centroid_distance
 
         joint_score = np.mean(list(results.values()))
-        return {"results": results, "joint_score": joint_score}
+        return {"results": dict(results), "joint_score": joint_score}
 
+    def apply_framework(self, data: list[dict]):
+        """
+        Apply the framework to a text generation model.
+        Returns:
+            dict: The results of the evaluation.
+        """
+        results = []
+        for example in data:
+            reference = example["reference"]
+            hypothesis = example["hypothesis"]
+            result = self.__apply_framework(reference, hypothesis)
+            results.append(result)
+        return results
 
 if __name__ == "__main__":
 
     framework = Framework()
-
-    hypothesis = "Mach die Klimaanlage an."
-    reference = ["Musik abspielen.", "Ich möchte Musik hören.", "Spiele Musik ab."]
-
-    result = framework.apply_framework(reference, hypothesis)
-    print(result["joint_score"])
+    results = framework.apply_framework(EXAMPLES)
+    print(results)
