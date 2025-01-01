@@ -52,6 +52,7 @@ class Framework:
             "google-bert/bert-base-german-cased"
         )
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
 
     def calculate_perplexity(
         self, text: str | list, model=None, tokenizer=None, base=2, max_perplexity=10000
@@ -325,42 +326,44 @@ class Framework:
         results = defaultdict(float)
         # Calculate perplexity
         perplexity = self.calculate_perplexity(hypotheses)
-        results["perplexity"] = perplexity
+        results["perplexity"] = round(perplexity, 3)
         self.logger.info(perplexity)
         # Calculate distinct-1
         distinct_1 = self.distinct_n(hypotheses, 1)
-        results["distinct_1"] = distinct_1
+        results["distinct_1"] = round(distinct_1, 3)
         self.logger.info(distinct_1)
         # Calculate distinct-2
         distinct_2 = self.distinct_n(hypotheses, 2)
-        results["distinct_2"] = distinct_2
+        results["distinct_2"] = round(distinct_2, 3)
         self.logger.info(distinct_2)
         # Calculate type-token ratio
         ttr = self.type_token_ratio(hypotheses)
-        results["ttr"] = ttr
+        results["ttr"] = round(ttr, 3)
         self.logger.info(ttr)
         # Calculate moving average TTR
         moving_average_ttr = self.moving_average_ttr(hypotheses)
-        results["moving_average_ttr"] = moving_average_ttr
+        results["moving_average_ttr"] = round(moving_average_ttr, 3)
         self.logger.info(moving_average_ttr)
         # Calculate BLEU score
         bleu_score = self.bleu_score(hypotheses, references)
-        results["bleu_score"] = bleu_score
+        results["bleu_score"] = round(bleu_score, 3)
         self.logger.info(bleu_score)
         # Discourse coherence
         discourse_coherence = self.discourse_coherence(hypotheses)
-        results["discourse_coherence"] = discourse_coherence
+        results["discourse_coherence"] = round(discourse_coherence, 3)
         self.logger.info(discourse_coherence)
         # Inter-sentence similarity
         inter_sentence_similarity = self.inter_sentence_similarity(hypotheses)
-        results["inter_sentence_similarity"] = inter_sentence_similarity
+        results["inter_sentence_similarity"] = round(inter_sentence_similarity, 3)
         self.logger.info(inter_sentence_similarity)
         # Centroid distance
         centroid_distance = self.distance_to_centroid(hypotheses)
-        results["centroid_distance"] = centroid_distance
+        results["centroid_distance"] = round(centroid_distance, 3)
         self.logger.info(centroid_distance)
 
-        joint_score = np.mean(list(results.values()))
+        joint_score = np.mean(
+            [value for value in results.values() if not math.isnan(value)]
+        )
         return {"results": dict(results), "joint_score": joint_score}
 
     def apply_framework(self, data: list[dict]):
@@ -370,29 +373,34 @@ class Framework:
             dict: The results of the evaluation.
         """
         results = []
-        for example in data:
-            reference = example["reference"]
-            hypothesis = example["hypothesis"]
+        for item in data:
+            reference = item["reference"]
+            hypothesis = item["hypothesis"]
             result = self.__apply_framework(reference, hypothesis)
             results.append(result)
         return results
 
     def apply_framework_to_datasets(
         self, golden_data: pd.DataFrame, generated_data: pd.DataFrame
-    ):
+    ) -> list[dict]:
         """
         Apply the framework to a text generation model.
         Returns:
             dict: The results of the evaluation.
         """
-        intents = [
+        intents: list[str] = [
             intent for intent in golden_data.intent.unique() if intent is not None
         ]
-        results = []
+        self.logger.info(intents)
+        results: list[dict] = []
+        self.logger.info("Evaluating intents: {}".format(intents))
         for intent in intents:
             references = golden_data[golden_data.intent == intent].text.tolist()
             hypotheses = generated_data[generated_data.intent == intent].text.tolist()
             if not hypotheses or not references:
+                self.logger.warning(
+                    "No data found for intent {}. Skipping evaluation.".format(intent)
+                )
                 continue
             result = self.__apply_framework(references, hypotheses)
             results.append({intent: result})
