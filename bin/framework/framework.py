@@ -17,6 +17,7 @@ from transformers import AutoModelForMaskedLM, AutoTokenizer
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import KMeans
+from tqdm import tqdm
 
 from bin.utils.types import DataSet
 from bin.framework.example_data import EXAMPLES
@@ -52,7 +53,7 @@ class Framework:
             "google-bert/bert-base-german-cased"
         )
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
+        logging.getLogger(__name__).setLevel(logging.INFO)
 
     def calculate_perplexity(
         self, text: str | list, model=None, tokenizer=None, base=2, max_perplexity=10000
@@ -102,7 +103,10 @@ class Framework:
         for t in text:
             tokens = t.split()
             ngrams_list = list(ngrams(tokens, n))
-            distinct = len(set(ngrams_list)) / len(ngrams_list)
+            try:
+                distinct = len(set(ngrams_list)) / len(ngrams_list)
+            except ZeroDivisionError:
+                distinct = 0.0
             distincts.append(distinct)
         return np.mean(distincts)
 
@@ -364,7 +368,7 @@ class Framework:
         joint_score = np.mean(
             [value for value in results.values() if not math.isnan(value)]
         )
-        return {"results": dict(results), "joint_score": joint_score}
+        return {"results": dict(results), "joint_score": round(joint_score, 3)}
 
     def apply_framework(self, data: list[dict]):
         """
@@ -394,7 +398,7 @@ class Framework:
         self.logger.info(intents)
         results: list[dict] = []
         self.logger.info("Evaluating intents: {}".format(intents))
-        for intent in intents:
+        for intent in tqdm(intents):
             references = golden_data[golden_data.intent == intent].text.tolist()
             hypotheses = generated_data[generated_data.intent == intent].text.tolist()
             if not hypotheses or not references:

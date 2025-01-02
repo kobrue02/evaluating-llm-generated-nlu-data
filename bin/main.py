@@ -52,4 +52,5 @@ print(golden_data)
 # Apply the framework
 framework = Framework()
 result = framework.apply_framework_to_datasets(golden_data, data)
-print(result)
+for intent in result:
+    print(intent)
