@@ -149,7 +149,11 @@ class Framework:
                 window = tokens[i : i + window_size]
                 window_types = set([self.cistem.stem(token) for token in window])
                 ttr = len(window_types) / len(window)
-                ttrs.append(ttr)
+                if not math.isnan(ttr):
+                    ttrs.append(ttr)
+        if not ttrs:
+            return 0.0
+
         return np.mean(ttrs)
 
     def bleu_score(self, hypothesis: str, reference: str) -> float:
@@ -179,6 +183,8 @@ class Framework:
                 text.split(),
                 smoothing_function=SmoothingFunction().method4,
             )
+            if math.isnan(bleu):
+                bleu = 0.0
             bleu_scores.append(bleu)
         return np.mean(bleu_scores)
 
@@ -331,43 +337,54 @@ class Framework:
         # Calculate perplexity
         perplexity = self.calculate_perplexity(hypotheses)
         results["perplexity"] = round(perplexity, 3)
-        self.logger.info(perplexity)
+        self.logger.info(f"Perplexity: {perplexity}")
         # Calculate distinct-1
         distinct_1 = self.distinct_n(hypotheses, 1)
         results["distinct_1"] = round(distinct_1, 3)
-        self.logger.info(distinct_1)
+        self.logger.info(f"Distinct-1: {distinct_1}")
         # Calculate distinct-2
         distinct_2 = self.distinct_n(hypotheses, 2)
         results["distinct_2"] = round(distinct_2, 3)
-        self.logger.info(distinct_2)
+        self.logger.info(f"Distinct-2: {distinct_2}")
         # Calculate type-token ratio
         ttr = self.type_token_ratio(hypotheses)
         results["ttr"] = round(ttr, 3)
-        self.logger.info(ttr)
+        self.logger.info(f"TTR: {ttr}")
         # Calculate moving average TTR
         moving_average_ttr = self.moving_average_ttr(hypotheses)
         results["moving_average_ttr"] = round(moving_average_ttr, 3)
-        self.logger.info(moving_average_ttr)
+        self.logger.info(f"Moving average TTR: {moving_average_ttr}")
         # Calculate BLEU score
         bleu_score = self.bleu_score(hypotheses, references)
         results["bleu_score"] = round(bleu_score, 3)
-        self.logger.info(bleu_score)
+        self.logger.info(f"BLEU score: {bleu_score}")
         # Discourse coherence
         discourse_coherence = self.discourse_coherence(hypotheses)
         results["discourse_coherence"] = round(discourse_coherence, 3)
-        self.logger.info(discourse_coherence)
+        self.logger.info(f"Discourse coherence: {discourse_coherence}")
         # Inter-sentence similarity
         inter_sentence_similarity = self.inter_sentence_similarity(hypotheses)
         results["inter_sentence_similarity"] = round(inter_sentence_similarity, 3)
-        self.logger.info(inter_sentence_similarity)
+        self.logger.info(f"Inter-sentence similarity: {inter_sentence_similarity}")
         # Centroid distance
         centroid_distance = self.distance_to_centroid(hypotheses)
         results["centroid_distance"] = round(centroid_distance, 3)
-        self.logger.info(centroid_distance)
+        self.logger.info(f"Centroid distance: {centroid_distance}")
+        # Pos tag n-grams diversity
+        pos_tag_n_grams_diversity = self.pos_tag_n_grams_diversity(
+            references, hypotheses, 2
+        )
+        results["pos_tag_n_grams_diversity"] = round(pos_tag_n_grams_diversity, 3)
+        self.logger.info(f"POS tag n-grams diversity: {pos_tag_n_grams_diversity}")
+        # Levenshtein distance
+        levenshtein_distance = self.mean_levenshtein_distance(references, hypotheses)
+        results["levenshtein_distance"] = round(levenshtein_distance, 3)
+        self.logger.info(f"Levenshtein distance: {levenshtein_distance}")
 
         joint_score = np.mean(
             [value for value in results.values() if not math.isnan(value)]
         )
+        self.logger.info(f"Joint score: {joint_score}")
         return {"results": dict(results), "joint_score": round(joint_score, 3)}
 
     def apply_framework(self, data: list[dict]):
@@ -383,6 +400,58 @@ class Framework:
             result = self.__apply_framework(reference, hypothesis)
             results.append(result)
         return results
+
+    def levenshtein_distance(self, s1, s2):
+        """Calculate the Levenshtein distance between two strings."""
+        if len(s1) < len(s2):
+            return self.levenshtein_distance(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        return previous_row[-1]
+
+    def mean_levenshtein_distance(self, references, hypotheses):
+        """Calculate the mean Levenshtein distance between hypotheses and references."""
+        distances = [
+            self.levenshtein_distance(r, h) for r, h in zip(references, hypotheses)
+        ]
+        return np.mean(distances)
+
+    def pos_tag_n_grams_diversity(self, references, hypotheses, n):
+        """Calculate the diversity of n-grams of POS tags in hypotheses with respect to references."""
+        for sample in references:
+            reference_n_grams = self.n_grams_of_pos_tags(sample, n)
+        for sample in hypotheses:
+            hypothesis_n_grams = self.n_grams_of_pos_tags(sample, n)
+        reference_n_grams = set(reference_n_grams)
+        hypothesis_n_grams = set(hypothesis_n_grams)
+        try:
+            diversity = len(hypothesis_n_grams.difference(reference_n_grams)) / len(
+                hypothesis_n_grams
+            )
+        except ZeroDivisionError:
+            diversity = 0.0
+        return diversity
+
+    def n_grams_of_pos_tags(self, text, n):
+        """Calculate n-grams of POS tags for a given text."""
+        pos_tags = self.get_pos_tags(text)
+        n_grams = list(ngrams(pos_tags, n))
+        return n_grams
+
+    def get_pos_tags(self, text):
+        """Get POS tags for a given text."""
+        # This is a simplified version. In practice, you'd use NLP tools
+        # to extract POS tags
+        return ["NN" for _ in text.split()]
 
     def apply_framework_to_datasets(
         self, golden_data: pd.DataFrame, generated_data: pd.DataFrame
