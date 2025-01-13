@@ -2,13 +2,14 @@ import json
 import logging
 import pandas as pd
 import numpy as np
-
 import matplotlib.pyplot as plt
+import seaborn as sns
 
+from scipy.stats import gaussian_kde
 from bin.framework.framework import Framework
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARN)
 
 
 def load_ubuntucorpus():
@@ -23,7 +24,7 @@ def load_ubuntucorpus():
     return df
 
 
-def load_data_full():
+def load_data_full(n: int = None):
     json_data = json.loads(open("data_full.json", encoding="utf-8").read())
     train_data = json_data["train"]
     texts = [item[0] for item in train_data]
@@ -31,6 +32,10 @@ def load_data_full():
     df = pd.DataFrame({"text": texts, "intent": intents})
     # for each intent, keep 10 random samples
     df = df.groupby("intent").apply(lambda x: x.sample(n=10)).reset_index(drop=True)
+    if n:
+        # keep only n intents
+        intents = df["intent"].unique()[:n]
+        df = df[df["intent"].isin(intents)]
     return df
 
 
@@ -76,36 +81,43 @@ def results_to_dataframe(results: list[dict]):
     return df
 
 
-def plot_results_df(df: pd.DataFrame):
+def plot_results_df(df: pd.DataFrame, plot_func=plt.hist):
     # make a dashboard of plots
     # where each plot is the distribution of a metric
     # across all intents
-    n_metrics = len(df.columns) - 1
+    n_metrics = len([col for col in df.columns if not df[col].isnull().all()]) - 1
     n_cols = 2
-    n_rows = n_metrics // n_cols + 1
+    n_rows = n_metrics // n_cols
 
     fig, axs = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
     axs = axs.flatten()
 
     for i, metric in enumerate(df.columns[1:]):
-        if metric == "intent":
+        if metric == "intent" or df[metric].isnull().all():
             continue
+
+        x, y = df[metric].index, df[metric].values
+
         ax = axs[i]
-        ax.hist(df[metric], bins=20)
-        # add a vertical line for the mean
-        ax.axvline(df[metric].mean(), color="red", linestyle="--")
+        sns.histplot(
+            y, ax=ax, color="b", kde=True, bins=20, binrange=(0, 1), stat="density"
+        )
         ax.set_title(metric)
         ax.set_xlabel("Value")
-        ax.set_ylabel("Frequency")
+        ax.set_ylabel("Density")
 
     plt.tight_layout()
     plt.show()
 
-df = load_data_full()
+
+df = load_data_full(5)
+df_golden = df.copy().sample(frac=1).reset_index(drop=True)
+df_generated = df.copy().sample(frac=1).reset_index(drop=True)
 
 framework = Framework()
 results = framework.apply_framework_to_datasets(
-    df, df.copy().sample(frac=1).reset_index(drop=True)
+    golden_data=df_golden,
+    generated_data=df_generated,
 )
 
 print(results)
