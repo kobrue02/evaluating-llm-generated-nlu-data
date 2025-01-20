@@ -74,12 +74,13 @@ def load_prompt(
             if isinstance(prompt[-1]["content"], tuple):
                 prompt[-1]["content"] = prompt[-1]["content"][0]  # Take the first element if it's a tuple
             prompt[-1]["content"] = str(prompt[-1]["content"])  # Ensure it's a string
-            prompt[-1]["content"] += "\n\nPreviously generated queries:\n" + "\n".join(generated_queries)
+            prompt[-1]["content"] += "\n\nPreviously generated queries:\n" + "\n".join(map(str, generated_queries))
         else:
             prompt.append({
                 "role": "user",
-                "content": "Previously generated queries:\n" + "\n".join(generated_queries)
+                "content": "Previously generated queries:\n" + "\n".join(map(str, generated_queries))
             })
+
 
     return Prompt(prompt, intent=kwargs.get("intent"))
 
