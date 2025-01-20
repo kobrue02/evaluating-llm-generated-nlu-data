@@ -81,6 +81,7 @@ class DataGenerationModel:
                 try:
                     batch_data = self.generate_synthetic_data(prompt)
                     self.logger.info(f"Generated {len(batch_data)} samples for {intent}")
+                    self.logger.info(f"Queries: {batch_data}")
                     for sample in batch_data:
                         if sample not in unique_samples:
                             unique_samples[sample] = None
