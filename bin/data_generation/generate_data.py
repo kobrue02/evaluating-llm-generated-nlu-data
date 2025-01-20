@@ -1,12 +1,14 @@
+from collections import OrderedDict
 from transformers import pipeline
 from tqdm import tqdm
-from collections import OrderedDict
+from typing import List
 
 from bin.data_generation.construct_prompt import Prompt, load_prompt
 from bin.utils.types import DataSet
 from bin.utils.exceptions import MalformedOutputError
 
 import ast
+import logging
 import torch
 
 torch.random.manual_seed(0)
@@ -26,6 +28,7 @@ class DataGenerationModel:
         """
         self.model = model
         self.tokenizer = tokenizer
+        self.logger = logging.getLogger(__name__)
 
     def generate_synthetic_data(self, prompt: Prompt) -> DataSet:
         """
@@ -52,31 +55,7 @@ class DataGenerationModel:
         output = pipe(messages, **generation_args)
 
         try:
-            output_queries = ast.literal_eval(output[0]["generated_text"])
-            if "Here are the queries:" in output_queries:
-                output_queries = [
-                    query
-                    for query in output_queries[
-                        output_queries.index("Here are the queries:") + 1 :
-                    ]
-                    if query
-                ]
-            if any([isinstance(query, list) for query in output_queries]):
-                output_queries = [
-                    query
-                    for query in [
-                        sublist
-                        for sublist in output_queries
-                        if isinstance(sublist, list)
-                    ][0]
-                ]
-
-            # If the output is a string, convert it to a list
-            if isinstance(output_queries, str):
-                output_queries = ast.literal_eval(output_queries)
-            else:
-                output_queries = [query for query in output_queries if query]
-
+            output_queries = self._parse_output(output[0]["generated_text"])
         except (ValueError, SyntaxError, TypeError) as e:
             raise MalformedOutputError(f"Error parsing generated queries: {e}")
 
@@ -84,6 +63,34 @@ class DataGenerationModel:
             output_queries, labels=[prompt.intent] * len(output_queries)
         )
         return synthetic_data
+    
+    def _parse_output(self, output_text: str) -> List[str]:
+        """
+        Parse the output text and extract the queries.
+
+        Args:
+            output_text (str): The generated text from the model.
+
+        Returns:
+            List[str]: A list of parsed queries.
+        """
+        try:
+            output_queries = ast.literal_eval(output_text)
+        except (ValueError, SyntaxError):
+            # If literal_eval fails, try to extract queries using string manipulation
+            if "Here are the queries:" in output_text:
+                output_queries = output_text.split("Here are the queries:")[1].strip().split("\n")
+            else:
+                output_queries = output_text.strip().split("\n")
+
+        if isinstance(output_queries, str):
+            output_queries = [output_queries]
+        elif isinstance(output_queries, list):
+            output_queries = [query for query in output_queries if query and isinstance(query, str)]
+        else:
+            raise ValueError("Unexpected output format")
+
+        return output_queries
 
     def build_dataset_from_intents(
         self, prompt_id: str, intents: list[str], samples_per_intent: int = 10
@@ -111,6 +118,7 @@ class DataGenerationModel:
                 )
                 try:
                     batch_data = self.generate_synthetic_data(prompt)
+                    self.logger.info(f"Generated {len(batch_data)} samples for {intent}")
                     for sample in batch_data:
                         if sample not in unique_samples:
                             unique_samples[sample] = None
