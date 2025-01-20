@@ -1,5 +1,7 @@
 from transformers import pipeline
 from tqdm import tqdm
+from collections import OrderedDict
+
 from bin.data_generation.construct_prompt import Prompt, load_prompt
 from bin.utils.types import DataSet
 from bin.utils.exceptions import MalformedOutputError
@@ -90,19 +92,34 @@ class DataGenerationModel:
         Generate synthetic data from a list of intents.
 
         Args:
+            prompt_id (str): The ID of the prompt to use.
             intents (list[str]): The intents to generate data from.
+            samples_per_intent (int): The number of samples to generate per intent.
 
         Returns:
             DataSet: The synthetic data.
         """
         synthetic_data = DataSet()
         for intent in tqdm(intents):
-            prompt = load_prompt(
-                id=prompt_id, intent=intent, num_samples=samples_per_intent
-            )
-            try:
-                data = self.generate_synthetic_data(prompt)
-            except MalformedOutputError:
-                continue
-            synthetic_data += data
+            unique_samples = OrderedDict()
+            remaining_samples = samples_per_intent
+
+            while remaining_samples > 0:
+                batch_size = min(10, remaining_samples)
+                prompt = load_prompt(
+                    id=prompt_id, intent=intent, num_samples=batch_size
+                )
+                try:
+                    batch_data = self.generate_synthetic_data(prompt)
+                    for sample in batch_data:
+                        if sample not in unique_samples:
+                            unique_samples[sample] = None
+                            remaining_samples -= 1
+                        if remaining_samples == 0:
+                            break
+                except MalformedOutputError:
+                    continue
+
+            synthetic_data += DataSet(list(unique_samples.keys()))
+
         return synthetic_data
