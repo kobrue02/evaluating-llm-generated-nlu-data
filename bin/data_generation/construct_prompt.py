@@ -31,32 +31,37 @@ class Prompt:
         return iter(self.prompt)
 
 
-def load_prompt(path: str = None, id: int = None, generated_queries: List[str] = None, **kwargs) -> Prompt:
+def load_prompt(
+    path: str = None, id: int = None, generated_queries: List[str] = None, **kwargs
+) -> Prompt:
     """
     Load a prompt from a file.
     Args:
         path (str): The path to the file.
         id (int): The ID of the prompt to load.
+        generated_queries (List[str]): Previously generated queries to append to the prompt.
     Returns:
-        list: The prompt.
+        Prompt: The loaded prompt.
     """
     if path:
         try:
             with open(path, "r", encoding="utf-8") as file:
                 prompt = json.load(file)
         except FileNotFoundError:
-            return []
+            return Prompt([], intent=kwargs.get("intent"))
     elif id:
         try:
             with open(f"bin/prompts/{id}.json", "r", encoding="utf-8") as file:
                 prompt = json.load(file)
         except FileNotFoundError:
-            return []
+            return Prompt([], intent=kwargs.get("intent"))
     else:
         raise ValueError("Either path or id must be provided.")
 
     if isinstance(prompt, str):
-        return prompt
+        return Prompt(
+            [{"role": "user", "content": prompt}], intent=kwargs.get("intent")
+        )
     else:
         for i, message in enumerate(prompt):
             if message.get("role") == "user":
@@ -65,7 +70,18 @@ def load_prompt(path: str = None, id: int = None, generated_queries: List[str] =
                 prompt[i]["content"] = str(prompt[i]["content"])
 
     if generated_queries:
-        prompt[-1]["content"] = str(prompt[-1]["content"]) + "\n\nPreviously generated queries:\n" + "\n".join(generated_queries)
+        if prompt[-1]["role"] == "user":
+            prompt[-1]["content"] += "\n\nPreviously generated queries:\n" + "\n".join(
+                generated_queries
+            )
+        else:
+            prompt.append(
+                {
+                    "role": "user",
+                    "content": "Previously generated queries:\n"
+                    + "\n".join(generated_queries),
+                }
+            )
 
     return Prompt(prompt, intent=kwargs.get("intent"))
 
