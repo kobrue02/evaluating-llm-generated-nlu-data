@@ -65,23 +65,21 @@ def load_prompt(
     else:
         for i, message in enumerate(prompt):
             if message.get("role") == "user":
-                prompt[i]["content"] = prompt[i]["content"].format(**kwargs)
+                prompt[i]["content"] = str(prompt[i]["content"].format(**kwargs))
             if message.get("role") == "assistant":
                 prompt[i]["content"] = str(prompt[i]["content"])
 
     if generated_queries:
         if prompt[-1]["role"] == "user":
-            prompt[-1]["content"] += "\n\nPreviously generated queries:\n" + "\n".join(
-                generated_queries
-            )
+            if isinstance(prompt[-1]["content"], tuple):
+                prompt[-1]["content"] = prompt[-1]["content"][0]  # Take the first element if it's a tuple
+            prompt[-1]["content"] = str(prompt[-1]["content"])  # Ensure it's a string
+            prompt[-1]["content"] += "\n\nPreviously generated queries:\n" + "\n".join(generated_queries)
         else:
-            prompt.append(
-                {
-                    "role": "user",
-                    "content": "Previously generated queries:\n"
-                    + "\n".join(generated_queries),
-                }
-            )
+            prompt.append({
+                "role": "user",
+                "content": "Previously generated queries:\n" + "\n".join(generated_queries)
+            })
 
     return Prompt(prompt, intent=kwargs.get("intent"))
 
