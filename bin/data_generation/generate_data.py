@@ -63,6 +63,15 @@ class DataGenerationModel:
             self.logger.error(f"Error parsing generated queries: {e}")
             raise MalformedOutputError(f"Error parsing generated queries: {e}")
 
+        # Ensure queries and labels match in length
+        if len(output_queries) != len([prompt.intent] * len(output_queries)):
+            self.logger.error(
+                "Mismatch between generated queries and intent labels"
+            )
+            raise ValueError(
+                "Mismatch between generated queries and intent labels"
+            )
+
         synthetic_data.extend(
             output_queries, labels=[prompt.intent] * len(output_queries)
         )
@@ -72,7 +81,6 @@ class DataGenerationModel:
         self, prompt_id: str, intents: list[str], samples_per_intent: int = 10
     ) -> DataSet:
         synthetic_data = DataSet()
-        retries = 0
         max_retries = 10
 
         for intent in tqdm(intents, desc="Processing intents"):
@@ -80,6 +88,7 @@ class DataGenerationModel:
             unique_samples = OrderedDict()
             remaining_samples = samples_per_intent
             generated_queries = []
+            retries = 0
 
             while remaining_samples > 0 and retries < max_retries:
                 retries += 1
@@ -103,14 +112,24 @@ class DataGenerationModel:
                             remaining_samples -= 1
                         if remaining_samples == 0:
                             break
+                    self.logger.info(
+                        f"Number of queries: {len(generated_queries)}, Number of labels: {len([prompt.intent] * len(generated_queries))}"
+                    )
                 except MalformedOutputError as e:
                     self.logger.warning(f"MalformedOutputError for {intent}: {e}")
                     continue
                 except Exception as e:
                     self.logger.error(f"Unexpected error for {intent}: {e}")
                     continue
-                self.logger.info(f"Remaining samples for intent {intent}: {remaining_samples}")
+                self.logger.info(
+                    f"Remaining samples for intent {intent}: {remaining_samples}"
+                )
             synthetic_data += DataSet(list(unique_samples.keys()))
+
+        # Final validation to ensure consistent dataset
+        if len(synthetic_data.queries) != len(synthetic_data.labels):
+            self.logger.error("Mismatch between queries and labels in dataset.")
+            raise ValueError("Mismatch between queries and labels in dataset.")
 
         return synthetic_data
 
@@ -127,23 +146,15 @@ class DataGenerationModel:
         try:
             output_queries = ast.literal_eval(output_text)
         except (ValueError, SyntaxError):
-            # If literal_eval fails, try to extract queries using string manipulation
-            if "Here are the queries:" in output_text:
-                output_queries = (
-                    output_text.split("Here are the queries:")[1].strip().split("\n")
-                )
-            else:
-                output_queries = output_text.strip().split("\n")
+            self.logger.warning("Fallback to line splitting for output parsing.")
+            output_queries = output_text.strip().split("\n")
 
         if isinstance(output_queries, str):
             output_queries = [output_queries]
 
-        elif isinstance(output_queries, list):
-            output_queries = [
-                query for query in output_queries if query and isinstance(query, str)
-            ]
-        else:
-            self.logger.error(f"Unexpected output format: {output_queries}")
+        elif not isinstance(output_queries, list):
+            self.logger.error(f"Unexpected output format: {type(output_queries)}")
             raise ValueError("Unexpected output format")
 
-        return output_queries
+        # Ensure only valid strings are returned
+        return [query.strip() for query in output_queries if isinstance(query, str) and query.strip()]
