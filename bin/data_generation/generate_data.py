@@ -88,6 +88,7 @@ class DataGenerationModel:
         elif isinstance(output_queries, list):
             output_queries = [query for query in output_queries if query and isinstance(query, str)]
         else:
+            self.logger.error(f"Unexpected output format: {output_queries}")
             raise ValueError("Unexpected output format")
 
         return output_queries
