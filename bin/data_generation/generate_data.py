@@ -1,4 +1,3 @@
-
 from collections import OrderedDict
 from transformers import pipeline
 from tqdm import tqdm
@@ -14,6 +13,7 @@ import torch
 
 torch.random.manual_seed(0)
 
+
 class DataGenerationModel:
     def __init__(self, *args, model=None, tokenizer=None):
         self.model = model
@@ -21,15 +21,19 @@ class DataGenerationModel:
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
         handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
         self.logger.addHandler(handler)
-        
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.logger.info(f"Using device: {self.device}")
-        
+
         self.logger.info("Initializing pipeline")
         try:
-            self.pipe = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+            self.pipe = pipeline(
+                "text-generation", model=self.model, tokenizer=self.tokenizer
+            )
         except Exception as e:
             self.logger.error(f"Error initializing pipeline: {e}")
             raise
@@ -72,19 +76,25 @@ class DataGenerationModel:
             self.logger.info(f"Generating data for intent: {intent}")
             unique_samples = OrderedDict()
             remaining_samples = samples_per_intent
+            generated_queries = []
 
             while remaining_samples > 0:
                 batch_size = min(10, remaining_samples)
                 prompt = load_prompt(
-                    id=prompt_id, intent=intent, num_samples=batch_size
+                    id=prompt_id,
+                    intent=intent,
+                    num_samples=batch_size,
+                    generated_queries=generated_queries,
                 )
                 try:
                     batch_data = self.generate_synthetic_data(prompt)
-                    self.logger.info(f"Generated {len(batch_data)} samples for {intent}")
-                    self.logger.info(f"Queries: {batch_data}")
+                    self.logger.info(
+                        f"Generated {len(batch_data)} samples for {intent}"
+                    )
                     for sample in batch_data:
                         if sample not in unique_samples:
                             unique_samples[sample] = None
+                            generated_queries.append(sample)
                             remaining_samples -= 1
                         if remaining_samples == 0:
                             break
@@ -98,7 +108,6 @@ class DataGenerationModel:
             synthetic_data += DataSet(list(unique_samples.keys()))
 
         return synthetic_data
-
 
     def _parse_output(self, output_text: str) -> List[str]:
         """
@@ -115,7 +124,9 @@ class DataGenerationModel:
         except (ValueError, SyntaxError):
             # If literal_eval fails, try to extract queries using string manipulation
             if "Here are the queries:" in output_text:
-                output_queries = output_text.split("Here are the queries:")[1].strip().split("\n")
+                output_queries = (
+                    output_text.split("Here are the queries:")[1].strip().split("\n")
+                )
             else:
                 output_queries = output_text.strip().split("\n")
 
@@ -123,7 +134,9 @@ class DataGenerationModel:
             output_queries = [output_queries]
 
         elif isinstance(output_queries, list):
-            output_queries = [query for query in output_queries if query and isinstance(query, str)]
+            output_queries = [
+                query for query in output_queries if query and isinstance(query, str)
+            ]
         else:
             self.logger.error(f"Unexpected output format: {output_queries}")
             raise ValueError("Unexpected output format")

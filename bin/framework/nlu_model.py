@@ -2,6 +2,7 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from typing import Dict, List, Union
 
+
 class NLUModel:
     def __init__(self, model_path: str, intent_threshold: float = 0.7):
         """
@@ -20,7 +21,9 @@ class NLUModel:
         self.id2label = self.model.config.id2label
         self.label2id = {v: k for k, v in self.id2label.items()}
 
-    def predict(self, text: Union[str, List[str]]) -> Union[Dict[str, float], List[Dict[str, float]]]:
+    def predict(
+        self, text: Union[str, List[str]]
+    ) -> Union[Dict[str, float], List[Dict[str, float]]]:
         """
         Predict intents for given text(s).
 
@@ -31,7 +34,9 @@ class NLUModel:
             Union[Dict[str, float], List[Dict[str, float]]]: Intent probabilities for each input.
         """
         # Tokenize the input text(s)
-        inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+        inputs = self.tokenizer(
+            text, return_tensors="pt", padding=True, truncation=True, max_length=512
+        )
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         # Get model predictions
@@ -59,21 +64,24 @@ class NLUModel:
         Returns:
             bool: True if the prediction is consistent, False otherwise.
         """
-        text = sample['text']
-        intended_intent = sample['intent']
+        text = sample["text"]
+        intended_intent = sample["intent"]
 
         # Get model predictions
         predictions = self.predict(text)
 
         # Check if the intended intent has the highest probability
         predicted_intent = max(predictions, key=predictions.get)
-        
+
         # Check if the probability of the intended intent is above the threshold
         is_above_threshold = predictions[intended_intent] >= self.intent_threshold
 
         return predicted_intent == intended_intent and is_above_threshold
 
-def nlu_consistency_filtering(generated_samples: List[Dict[str, str]], nlu_model: NLUModel) -> List[Dict[str, str]]:
+
+def nlu_consistency_filtering(
+    generated_samples: List[Dict[str, str]], nlu_model: NLUModel
+) -> List[Dict[str, str]]:
     """
     Filter generated samples based on NLU model consistency.
 

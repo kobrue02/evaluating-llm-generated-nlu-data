@@ -1,20 +1,31 @@
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    Trainer,
+    TrainingArguments,
+)
 from bin.utils.types import DataSet
 
 # Prepare your data
-train_data = DataSet.from_dict({
-    "data": ["book a flight", "what's the weather", ...],
-    "labels": [0, 1, ...]  # Encoded intents
-})
+train_data = DataSet.from_dict(
+    {
+        "data": ["book a flight", "what's the weather", ...],
+        "labels": [0, 1, ...],  # Encoded intents
+    }
+)
 
 # Load pre-trained model and tokenizer
 model_name = "distilbert-base-uncased"
-model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=len(set(train_data["label"])))
+model = AutoModelForSequenceClassification.from_pretrained(
+    model_name, num_labels=len(set(train_data["label"]))
+)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
+
 
 # Tokenize the data
 def tokenize_function(examples):
     return tokenizer(examples["text"], padding="max_length", truncation=True)
+
 
 tokenized_data = train_data.map(tokenize_function, batched=True)
 
