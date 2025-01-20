@@ -72,13 +72,17 @@ class DataGenerationModel:
         self, prompt_id: str, intents: list[str], samples_per_intent: int = 10
     ) -> DataSet:
         synthetic_data = DataSet()
+        retries = 0
+        max_retries = 10
+
         for intent in tqdm(intents, desc="Processing intents"):
             self.logger.info(f"Generating data for intent: {intent}")
             unique_samples = OrderedDict()
             remaining_samples = samples_per_intent
             generated_queries = []
 
-            while remaining_samples > 0:
+            while remaining_samples > 0 and retries < max_retries:
+                retries += 1
                 batch_size = min(10, remaining_samples)
                 prompt = load_prompt(
                     id=prompt_id,
@@ -91,6 +95,7 @@ class DataGenerationModel:
                     self.logger.info(
                         f"Generated {len(batch_data)} samples for {intent}"
                     )
+                    self.logger.info(f"The generated samples are: {batch_data}")
                     for sample in batch_data:
                         if sample not in unique_samples:
                             unique_samples[sample] = None
@@ -104,7 +109,7 @@ class DataGenerationModel:
                 except Exception as e:
                     self.logger.error(f"Unexpected error for {intent}: {e}")
                     continue
-
+                self.logger.info(f"Remaining samples for intent {intent}: {remaining_samples}")
             synthetic_data += DataSet(list(unique_samples.keys()))
 
         return synthetic_data
