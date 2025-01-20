@@ -97,3 +97,31 @@ class DataGenerationModel:
 
         return synthetic_data
 
+    def _parse_output(self, output_text: str) -> List[str]:
+        """
+        Parse the output text and extract the queries.
+
+        Args:
+            output_text (str): The generated text from the model.
+
+        Returns:
+            List[str]: A list of parsed queries.
+        """
+        try:
+            output_queries = ast.literal_eval(output_text)
+        except (ValueError, SyntaxError):
+            # If literal_eval fails, try to extract queries using string manipulation
+            if "Here are the queries:" in output_text:
+                output_queries = output_text.split("Here are the queries:")[1].strip().split("\n")
+            else:
+                output_queries = output_text.strip().split("\n")
+
+        if isinstance(output_queries, str):
+            output_queries = [output_queries]
+        elif isinstance(output_queries, list):
+            output_queries = [query for query in output_queries if query and isinstance(query, str)]
+        else:
+            self.logger.error(f"Unexpected output format: {output_queries}")
+            raise ValueError("Unexpected output format")
+
+        return output_queries
