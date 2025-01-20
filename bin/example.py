@@ -100,7 +100,13 @@ def plot_results_df(df: pd.DataFrame, plot_func=plt.hist):
 
         ax = axs[i]
         sns.histplot(
-            y, ax=ax, color="b", kde=True, bins=20, binrange=(0, 1), stat="density"
+            y,
+            ax=ax,
+            kde=True,
+            bins=20,
+            color="blue",
+            alpha=0.5,
+            linewidth=0,
         )
         ax.set_title(metric)
         ax.set_xlabel("Value")
@@ -110,7 +116,7 @@ def plot_results_df(df: pd.DataFrame, plot_func=plt.hist):
     plt.show()
 
 
-df = load_data_full(5)
+df = load_data_full()
 df_golden = df.copy().sample(frac=1).reset_index(drop=True)
 df_generated = df.copy().sample(frac=1).reset_index(drop=True)
 

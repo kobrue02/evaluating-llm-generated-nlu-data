@@ -50,14 +50,14 @@ class Framework:
         )
         self.logger = logging.getLogger(__name__)
 
-   
-
     def compute_hypotheses_metrics(self, hypotheses) -> dict:
         """Compute metrics for a list of hypotheses."""
         results = defaultdict(float)
 
         # Calculate perplexity
-        perplexity = calculate_perplexity(hypotheses, model=self.g_model, tokenizer=self.g_tokenizer)
+        perplexity = calculate_perplexity(
+            hypotheses, model=self.g_model, tokenizer=self.g_tokenizer
+        )
         results["perplexity"] = round(perplexity, 3)
         self.logger.info(f"Perplexity: {perplexity}")
 
@@ -102,7 +102,9 @@ class Framework:
         self.logger.info(f"Discourse coherence: {discourse_coherence_}")
 
         # Inter-sentence similarity
-        inter_sentence_similarity_ = inter_sentence_similarity(hypotheses, model=self.model)
+        inter_sentence_similarity_ = inter_sentence_similarity(
+            hypotheses, model=self.model
+        )
         results["inter_sentence_similarity"] = round(inter_sentence_similarity_, 3)
         self.logger.info(f"Inter-sentence similarity: {inter_sentence_similarity_}")
 
@@ -123,9 +125,7 @@ class Framework:
         self.logger.info(f"Levenshtein distance: {levenshtein_dist}")
 
         # POS tag n-grams diversity
-        pos_tag_n_grams = pos_tag_n_grams_diversity(
-            references, hypotheses, 2
-        )
+        pos_tag_n_grams = pos_tag_n_grams_diversity(references, hypotheses, 2)
         results["pos_tag_n_grams_diversity"] = round(pos_tag_n_grams, 3)
         self.logger.info(f"POS tag n-grams diversity: {pos_tag_n_grams}")
 
