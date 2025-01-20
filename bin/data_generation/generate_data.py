@@ -26,15 +26,16 @@ class DataGenerationModel:
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.logger.info(f"Using device: {self.device}")
-
-    def generate_synthetic_data(self, prompt: Prompt) -> DataSet:
-        synthetic_data = DataSet()
+        
         self.logger.info("Initializing pipeline")
         try:
-            pipe = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
+            self.pipe = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer, device=self.device)
         except Exception as e:
             self.logger.error(f"Error initializing pipeline: {e}")
             raise
+
+    def generate_synthetic_data(self, prompt: Prompt) -> DataSet:
+        synthetic_data = DataSet()
 
         generation_args = {
             "max_new_tokens": 500,
@@ -46,7 +47,7 @@ class DataGenerationModel:
         messages = list(prompt)
         self.logger.info("Generating text")
         try:
-            output = pipe(messages, **generation_args)
+            output = self.pipe(messages, **generation_args)
         except Exception as e:
             self.logger.error(f"Error in text generation: {e}")
             raise
@@ -97,6 +98,7 @@ class DataGenerationModel:
 
         return synthetic_data
 
+
     def _parse_output(self, output_text: str) -> List[str]:
         """
         Parse the output text and extract the queries.
@@ -118,6 +120,7 @@ class DataGenerationModel:
 
         if isinstance(output_queries, str):
             output_queries = [output_queries]
+
         elif isinstance(output_queries, list):
             output_queries = [query for query in output_queries if query and isinstance(query, str)]
         else:
