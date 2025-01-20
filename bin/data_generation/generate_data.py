@@ -31,7 +31,7 @@ class DataGenerationModel:
         synthetic_data = DataSet()
         self.logger.info("Initializing pipeline")
         try:
-            pipe = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer, device=self.device)
+            pipe = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
         except Exception as e:
             self.logger.error(f"Error initializing pipeline: {e}")
             raise
@@ -97,4 +97,3 @@ class DataGenerationModel:
 
         return synthetic_data
 
-# ... (rest of the code remains the same)
