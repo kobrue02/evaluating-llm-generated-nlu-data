@@ -29,7 +29,7 @@ class DataGenerationModel:
         
         self.logger.info("Initializing pipeline")
         try:
-            self.pipe = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer, device=self.device)
+            self.pipe = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer)
         except Exception as e:
             self.logger.error(f"Error initializing pipeline: {e}")
             raise
