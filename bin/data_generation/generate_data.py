@@ -124,7 +124,9 @@ class DataGenerationModel:
                 self.logger.info(
                     f"Remaining samples for intent {intent}: {remaining_samples}"
                 )
-            synthetic_data += DataSet(list(unique_samples.keys()))
+            synthetic_data += DataSet(
+                data=generated_queries, labels=[prompt.intent] * len(generated_queries)
+            )
 
         # Final validation to ensure consistent dataset
         if len(synthetic_data.data) != len(synthetic_data.labels):
