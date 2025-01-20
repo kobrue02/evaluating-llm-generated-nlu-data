@@ -127,7 +127,7 @@ class DataGenerationModel:
             synthetic_data += DataSet(list(unique_samples.keys()))
 
         # Final validation to ensure consistent dataset
-        if len(synthetic_data.queries) != len(synthetic_data.labels):
+        if len(synthetic_data.data) != len(synthetic_data.labels):
             self.logger.error("Mismatch between queries and labels in dataset.")
             raise ValueError("Mismatch between queries and labels in dataset.")
 
