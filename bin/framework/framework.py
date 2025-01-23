@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from bin.framework.example_data import EXAMPLES
 from bin.framework.metrics import *  # noqa: F403
+from bin.framework.metrics import Metric
 from bin.utils.logger import TqdmLoggingHandler
 
 logging.getLogger("transformers").setLevel(logging.ERROR)
@@ -37,7 +38,7 @@ class Framework:
         apply_framework(): Calculate all metrics for a text generation model.
     """
 
-    def __init__(self):
+    def __init__(self, metrics: list[Metric] = None):
         self.cistem = Cistem()
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.g_model = AutoModelForMaskedLM.from_pretrained(
@@ -49,63 +50,92 @@ class Framework:
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(TqdmLoggingHandler())
 
+        if metrics is None:
+            self.metrics = [
+                Metric.PERPLEXITY,
+                Metric.DISTINCT_1,
+                Metric.DISTINCT_2,
+                Metric.TTR,
+                Metric.MOVING_AVERAGE_TTR,
+                Metric.AVERAGE_N_OF_TOKENS,
+                Metric.AVERAGE_N_OF_CHARACTERS,
+                Metric.DISTANCE_TO_CENTROID,
+                Metric.DISCOURSE_COHERENCE,
+                Metric.INTER_SENTENCE_SIMILARITY,
+                Metric.BLEU,
+                Metric.MEAN_LEVENSHTEIN_DISTANCE,
+                Metric.POS_TAG_N_GRAMS_DIVERSITY,
+            ]
+        else:
+            self.metrics = metrics
+
     def compute_hypotheses_metrics(self, hypotheses) -> dict:
         """Compute metrics for a list of hypotheses."""
         results = defaultdict(float)
 
-        # Calculate perplexity
-        perplexity = calculate_perplexity(
-            hypotheses, model=self.g_model, tokenizer=self.g_tokenizer
-        )
-        results["perplexity"] = round(perplexity, 3)
-        self.logger.info(f"Perplexity: {perplexity}")
+        if Metric.PERPLEXITY in self.metrics:
+            # Calculate perplexity
+            perplexity = calculate_perplexity(
+                hypotheses, model=self.g_model, tokenizer=self.g_tokenizer
+            )
+            results["perplexity"] = round(perplexity, 3)
+            self.logger.info(f"Perplexity: {perplexity}")
 
-        # Calculate distinct-1
-        distinct_1 = distinct_n(hypotheses, 1)
-        results["distinct_1"] = round(distinct_1, 3)
-        self.logger.info(f"Distinct-1: {distinct_1}")
+        if Metric.DISTINCT_1 in self.metrics:
+            # Calculate distinct-1
+            distinct_1 = distinct_n(hypotheses, 1)
+            results["distinct_1"] = round(distinct_1, 3)
+            self.logger.info(f"Distinct-1: {distinct_1}")
 
-        # Calculate distinct-2
-        distinct_2 = distinct_n(hypotheses, 2)
-        results["distinct_2"] = round(distinct_2, 3)
-        self.logger.info(f"Distinct-2: {distinct_2}")
+        if Metric.DISTINCT_2 in self.metrics:
+            # Calculate distinct-2
+            distinct_2 = distinct_n(hypotheses, 2)
+            results["distinct_2"] = round(distinct_2, 3)
+            self.logger.info(f"Distinct-2: {distinct_2}")
 
-        # Calculate type-token ratio
-        ttr = type_token_ratio(hypotheses)
-        results["ttr"] = round(ttr, 3)
-        self.logger.info(f"TTR: {ttr}")
+        if Metric.TTR in self.metrics:
+            # Calculate type-token ratio
+            ttr = type_token_ratio(hypotheses)
+            results["ttr"] = round(ttr, 3)
+            self.logger.info(f"TTR: {ttr}")
 
-        # Calculate moving average TTR
-        ma_ttr = moving_average_ttr(hypotheses)
-        results["moving_average_ttr"] = round(ma_ttr, 3)
-        self.logger.info(f"Moving average TTR: {ma_ttr}")
+        if Metric.MOVING_AVERAGE_TTR in self.metrics:
+            # Calculate moving average TTR
+            ma_ttr = moving_average_ttr(hypotheses)
+            results["moving_average_ttr"] = round(ma_ttr, 3)
+            self.logger.info(f"Moving average TTR: {ma_ttr}")
 
-        # Average number of tokens
-        average_n_tokens = average_n_of_tokens(hypotheses)
-        results["average_n_of_tokens"] = round(average_n_tokens, 3)
-        self.logger.info(f"Average number of tokens: {average_n_tokens}")
+        if Metric.AVERAGE_N_OF_TOKENS in self.metrics:
+            # Average number of tokens
+            average_n_tokens = average_n_of_tokens(hypotheses)
+            results["average_n_of_tokens"] = round(average_n_tokens, 3)
+            self.logger.info(f"Average number of tokens: {average_n_tokens}")
 
-        # Average number of characters
-        average_n_characters = average_n_of_characters(hypotheses)
-        results["average_n_of_characters"] = round(average_n_characters, 3)
-        self.logger.info(f"Average number of characters: {average_n_characters}")
+        if Metric.AVERAGE_N_OF_CHARACTERS in self.metrics:
+            # Average number of characters
+            average_n_characters = average_n_of_characters(hypotheses)
+            results["average_n_of_characters"] = round(average_n_characters, 3)
+            self.logger.info(f"Average number of characters: {average_n_characters}")
 
-        # Mean distance to centroid
-        centroid_distance = distance_to_centroid(hypotheses, model=self.model)
-        results["centroid_distance"] = round(centroid_distance, 3)
-        self.logger.info(f"Centroid distance: {centroid_distance}")
+        if Metric.DISTANCE_TO_CENTROID in self.metrics:
+            # Mean distance to centroid
+            centroid_distance = distance_to_centroid(hypotheses, model=self.model)
+            results["centroid_distance"] = round(centroid_distance, 3)
+            self.logger.info(f"Centroid distance: {centroid_distance}")
 
-        # Discourse Coherence
-        discourse_coherence_ = discourse_coherence(hypotheses)
-        results["discourse_coherence"] = round(discourse_coherence_, 3)
-        self.logger.info(f"Discourse coherence: {discourse_coherence_}")
+        if Metric.DISCOURSE_COHERENCE in self.metrics:
+            # Discourse Coherence
+            discourse_coherence_ = discourse_coherence(hypotheses)
+            results["discourse_coherence"] = round(discourse_coherence_, 3)
+            self.logger.info(f"Discourse coherence: {discourse_coherence_}")
 
-        # Inter-sentence similarity
-        inter_sentence_similarity_ = inter_sentence_similarity(
-            hypotheses, model=self.model
-        )
-        results["inter_sentence_similarity"] = round(inter_sentence_similarity_, 3)
-        self.logger.info(f"Inter-sentence similarity: {inter_sentence_similarity_}")
+        if Metric.INTER_SENTENCE_SIMILARITY in self.metrics:
+            # Inter-sentence similarity
+            inter_sentence_similarity_ = inter_sentence_similarity(
+                hypotheses, model=self.model
+            )
+            results["inter_sentence_similarity"] = round(inter_sentence_similarity_, 3)
+            self.logger.info(f"Inter-sentence similarity: {inter_sentence_similarity_}")
 
         return dict(results)
 
@@ -113,20 +143,23 @@ class Framework:
         """Compute metrics for a list of references and hypotheses."""
         results = defaultdict(float)
 
-        # Calculate BLEU score
-        bleu_score_ = bleu_score(hypotheses, references)
-        results["bleu_score"] = round(bleu_score_, 3)
-        self.logger.info(f"BLEU score: {bleu_score_}")
+        if Metric.BLEU in self.metrics:
+            # Calculate BLEU score
+            bleu_score_ = bleu_score(hypotheses, references)
+            results["bleu_score"] = round(bleu_score_, 3)
+            self.logger.info(f"BLEU score: {bleu_score_}")
 
-        # Levenshtein distance
-        levenshtein_dist = mean_levenshtein_distance(references, hypotheses)
-        results["levenshtein_distance"] = round(levenshtein_dist, 3)
-        self.logger.info(f"Levenshtein distance: {levenshtein_dist}")
+        if Metric.MEAN_LEVENSHTEIN_DISTANCE in self.metrics:
+            # Levenshtein distance
+            levenshtein_dist = mean_levenshtein_distance(references, hypotheses)
+            results["levenshtein_distance"] = round(levenshtein_dist, 3)
+            self.logger.info(f"Levenshtein distance: {levenshtein_dist}")
 
-        # POS tag n-grams diversity
-        pos_tag_n_grams = pos_tag_n_grams_diversity(references, hypotheses, 2)
-        results["pos_tag_n_grams_diversity"] = round(pos_tag_n_grams, 3)
-        self.logger.info(f"POS tag n-grams diversity: {pos_tag_n_grams}")
+        if Metric.POS_TAG_N_GRAMS_DIVERSITY in self.metrics:
+            # POS tag n-grams diversity
+            pos_tag_n_grams = pos_tag_n_grams_diversity(references, hypotheses, 2)
+            results["pos_tag_n_grams_diversity"] = round(pos_tag_n_grams, 3)
+            self.logger.info(f"POS tag n-grams diversity: {pos_tag_n_grams}")
 
         return dict(results)
 

@@ -12,6 +12,7 @@ import numpy as np
 import torch
 
 from collections import defaultdict
+from enum import Enum
 from nltk import ngrams
 from nltk.stem import Cistem
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
@@ -21,6 +22,22 @@ from sklearn.cluster import KMeans
 
 cistem = Cistem()
 logger = logging.getLogger(__name__)
+
+class Metric(Enum):
+    PERPLEXITY = "perplexity"
+    DISTINCT_1 = "distinct_1"
+    DISTINCT_2 = "distinct_2"
+    TTR = "ttr"
+    MOVING_AVERAGE_TTR = "moving_average_ttr"
+    BLEU = "bleu"
+    INTER_SENTENCE_SIMILARITY = "inter_sentence_similarity"
+    DISCOURSE_COHERENCE = "discourse_coherence"
+    DISTANCE_TO_CENTROID = "distance_to_centroid"
+    SIMILARITY_BY_CLUSTERING = "similarity_by_clustering"
+    MEAN_LEVENSHTEIN_DISTANCE = "mean_levenshtein_distance"
+    POS_TAG_N_GRAMS_DIVERSITY = "pos_tag_n_grams_diversity"
+    AVERAGE_N_OF_TOKENS = "average_n_of_tokens"
+    AVERAGE_N_OF_CHARACTERS = "average_n_of_characters"
 
 
 def calculate_perplexity(
