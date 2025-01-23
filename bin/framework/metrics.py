@@ -5,10 +5,10 @@ Author: Konrad Brüggemann
 Date: 13.01.2025
 """
 
+import logging
 import math
 import nltk
 import numpy as np
-from sklearn.cluster import KMeans
 import torch
 
 from collections import defaultdict
@@ -16,9 +16,11 @@ from nltk import ngrams
 from nltk.stem import Cistem
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.cluster import KMeans
 
 
 cistem = Cistem()
+logger = logging.getLogger(__name__)
 
 
 def calculate_perplexity(
@@ -200,11 +202,10 @@ def inter_sentence_similarity(sentences: list[str], model=None):
         sentences = [sentences]
 
     if not sentences or len(sentences) < 2:
-        raise ValueError(
-            "At least two sentences are required to compute inter-sentence similarity. Provided sentences: {}".format(
-                str(sentences)
-            )
+        logger.warning(
+            "At least two sentences are required for inter-sentence similarity."
         )
+        return 0.0
 
     # Generate embeddings
     embeddings = model.encode(sentences)

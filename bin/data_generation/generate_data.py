@@ -65,12 +65,8 @@ class DataGenerationModel:
 
         # Ensure queries and labels match in length
         if len(output_queries) != len([prompt.intent] * len(output_queries)):
-            self.logger.error(
-                "Mismatch between generated queries and intent labels"
-            )
-            raise ValueError(
-                "Mismatch between generated queries and intent labels"
-            )
+            self.logger.error("Mismatch between generated queries and intent labels")
+            raise ValueError("Mismatch between generated queries and intent labels")
 
         synthetic_data.extend(
             output_queries, labels=[prompt.intent] * len(output_queries)
@@ -159,4 +155,8 @@ class DataGenerationModel:
             raise ValueError("Unexpected output format")
 
         # Ensure only valid strings are returned
-        return [query.strip() for query in output_queries if isinstance(query, str) and query.strip()]
+        return [
+            query.strip()
+            for query in output_queries
+            if isinstance(query, str) and query.strip()
+        ]

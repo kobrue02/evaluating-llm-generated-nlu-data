@@ -4,8 +4,6 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 
 import logging
-import math
-import numpy as np
 import pandas as pd
 
 from collections import defaultdict
@@ -15,8 +13,8 @@ from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
 from bin.framework.example_data import EXAMPLES
-from bin.framework.metrics import *
-
+from bin.framework.metrics import *  # noqa: F403
+from bin.utils.logger import TqdmLoggingHandler
 
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
@@ -49,6 +47,7 @@ class Framework:
             "google-bert/bert-base-german-cased"
         )
         self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(TqdmLoggingHandler())
 
     def compute_hypotheses_metrics(self, hypotheses) -> dict:
         """Compute metrics for a list of hypotheses."""
@@ -131,16 +130,19 @@ class Framework:
 
         return dict(results)
 
-    def __apply_framework(self, references: list | str, hypotheses: list | str) -> dict:
+    def __apply_framework(self, references: list | str = None, hypotheses: list | str = None) -> dict:
         """
         Apply the framework to a text generation model.
         Returns:
             dict: The results of the evaluation.
         """
         results = {}
+        self.logger.info("Computing metrics for hypotheses.")
         results.update(self.compute_hypotheses_metrics(hypotheses))
-        results.update(self.compute_comparison_metrics(references, hypotheses))
-
+        if references:
+            self.logger.info("Computing comparison metrics.")
+            results.update(self.compute_comparison_metrics(references, hypotheses))
+        self.logger.info("Results: {}".format(results))
         return {"results": results}
 
     def apply_framework(self, data: list[dict]):
@@ -158,7 +160,7 @@ class Framework:
         return results
 
     def apply_framework_to_datasets(
-        self, golden_data: pd.DataFrame, generated_data: pd.DataFrame
+        self, dataset_a: pd.DataFrame, dataset_b: pd.DataFrame = None
     ) -> list[dict]:
         """
         Apply the framework to a text generation model.
@@ -166,21 +168,31 @@ class Framework:
             dict: The results of the evaluation.
         """
         intents: list[str] = [
-            intent for intent in golden_data.intent.unique() if intent is not None
+            intent for intent in dataset_a.intent.unique() if intent is not None
         ]
         self.logger.info(intents)
         results: list[dict] = []
         self.logger.info("Evaluating intents: {}".format(intents))
         for intent in tqdm(intents):
-            references = golden_data[golden_data.intent == intent].text.tolist()
-            hypotheses = generated_data[generated_data.intent == intent].text.tolist()
-            if not hypotheses or not references:
+            self.logger.info("Evaluating intent: {}".format(intent))
+
+            references = None
+            hypotheses = []
+            
+            hypotheses = dataset_a[dataset_a.intent == intent].text.tolist()
+            self.logger.info("Number of hypotheses: {}".format(len(hypotheses)))
+
+            if dataset_b:
+                references = dataset_b[dataset_b.intent == intent].text.tolist()
+            
+            if not hypotheses:
                 self.logger.warning(
                     "No data found for intent {}. Skipping evaluation.".format(intent)
                 )
                 continue
             result = self.__apply_framework(references, hypotheses)
             results.append({intent: result})
+
         return results
 
 

@@ -6,37 +6,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from scipy.stats import gaussian_kde
+
 from bin.framework.framework import Framework
+from bin.utils.read_datasets import read_sipgate_dataset
 
-
-logging.basicConfig(level=logging.WARN)
-
-
-def load_ubuntucorpus():
-    json_data = json.loads(open("AskUbuntuCorpus.json", encoding="utf-8").read())
-    df = pd.DataFrame(json_data["sentences"])
-
-    df = df[["text", "intent"]]
-
-    # for each intent, keep 5 random samples
-    df = df.groupby("intent").apply(lambda x: x.sample(n=5)).reset_index(drop=True)
-
-    return df
-
-
-def load_data_full(n: int = None):
-    json_data = json.loads(open("data_full.json", encoding="utf-8").read())
-    train_data = json_data["train"]
-    texts = [item[0] for item in train_data]
-    intents = [item[1] for item in train_data]
-    df = pd.DataFrame({"text": texts, "intent": intents})
-    # for each intent, keep 10 random samples
-    df = df.groupby("intent").apply(lambda x: x.sample(n=10)).reset_index(drop=True)
-    if n:
-        # keep only n intents
-        intents = df["intent"].unique()[:n]
-        df = df[df["intent"].isin(intents)]
-    return df
+logging.basicConfig(level=logging.INFO)
 
 
 def calculate_mean_metrics(results):
@@ -116,20 +90,15 @@ def plot_results_df(df: pd.DataFrame, plot_func=plt.hist):
     plt.show()
 
 
-df = load_data_full()
-df_golden = df.copy().sample(frac=1).reset_index(drop=True)
-df_generated = df.copy().sample(frac=1).reset_index(drop=True)
+df = read_sipgate_dataset()
+print(df.head())
 
 framework = Framework()
-results = framework.apply_framework_to_datasets(
-    golden_data=df_golden,
-    generated_data=df_generated,
-)
+results = framework.apply_framework_to_datasets(df)
 
 print(results)
-
 results_df = results_to_dataframe(results)
 
 print(results_df)
-
 plot_results_df(results_df)
+
