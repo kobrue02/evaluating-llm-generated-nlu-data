@@ -10,14 +10,17 @@ from bin.utils.exceptions import MalformedOutputError
 import ast
 import logging
 import torch
+import pandas as pd
 
 torch.random.manual_seed(0)
 
 
 class DataGenerationModel:
-    def __init__(self, *args, model=None, tokenizer=None):
+    def __init__(self, *args, model=None, tokenizer=None, reference_dataset: pd.DataFrame = None):
         self.model = model
         self.tokenizer = tokenizer
+        self.reference_dataset = reference_dataset
+
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
         handler = logging.StreamHandler()
@@ -78,6 +81,65 @@ class DataGenerationModel:
     ) -> DataSet:
         synthetic_data = DataSet()
         max_retries = 10
+
+        for intent in tqdm(intents, desc="Processing intents"):
+            self.logger.info(f"Generating data for intent: {intent}")
+            unique_samples = OrderedDict()
+            remaining_samples = samples_per_intent
+            generated_queries = []
+            retries = 0
+
+            while remaining_samples > 0 and retries < max_retries:
+                retries += 1
+                batch_size = min(10, remaining_samples)
+                prompt = load_prompt(
+                    id=prompt_id,
+                    intent=intent,
+                    num_samples=batch_size,
+                    generated_queries=generated_queries,
+                )
+                try:
+                    batch_data = self.generate_synthetic_data(prompt)
+                    self.logger.info(
+                        f"Generated {len(batch_data)} samples for {intent}"
+                    )
+                    self.logger.info(f"The generated samples are: {batch_data}")
+                    for sample in batch_data:
+                        if sample not in unique_samples:
+                            unique_samples[sample] = None
+                            generated_queries.append(sample)
+                            remaining_samples -= 1
+                        if remaining_samples == 0:
+                            break
+                    self.logger.info(
+                        f"Number of queries: {len(generated_queries)}, Number of labels: {len([prompt.intent] * len(generated_queries))}"
+                    )
+                except MalformedOutputError as e:
+                    self.logger.warning(f"MalformedOutputError for {intent}: {e}")
+                    continue
+                except Exception as e:
+                    self.logger.error(f"Unexpected error for {intent}: {e}")
+                    continue
+                self.logger.info(
+                    f"Remaining samples for intent {intent}: {remaining_samples}"
+                )
+            synthetic_data += DataSet(
+                data=generated_queries, labels=[prompt.intent] * len(generated_queries)
+            )
+
+        # Final validation to ensure consistent dataset
+        if len(synthetic_data.data) != len(synthetic_data.labels):
+            self.logger.error("Mismatch between queries and labels in dataset.")
+            raise ValueError("Mismatch between queries and labels in dataset.")
+
+        return synthetic_data
+
+    def build_dataset_from_reference(self, prompt_id: str, samples_per_intent: int = 10) -> DataSet:
+
+        synthetic_data = DataSet()
+        max_retries = 10
+
+        intents = self.reference_dataset.intent.unique()
 
         for intent in tqdm(intents, desc="Processing intents"):
             self.logger.info(f"Generating data for intent: {intent}")

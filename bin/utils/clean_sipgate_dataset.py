@@ -21,8 +21,10 @@ def clean_sipgate_dataset(df: pd.DataFrame) -> pd.DataFrame:
     df.reset_index(drop=True, inplace=True)
     return df
 
+
 if __name__ == "__main__":
     from bin.utils.read_datasets import read_sipgate_dataset
+
     df = read_sipgate_dataset()
     df = clean_sipgate_dataset(df)
     print(df.head())

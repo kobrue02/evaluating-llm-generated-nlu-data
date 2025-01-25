@@ -5,7 +5,7 @@
     }, 
     {
         "role": "user",
-        "content": "Can you generate 5 German queries for the intent `ac_on`?"
+        "content": "Can you generate 5 German queries for the intent `ac_on`? Here are some examples: ['Mach die Klima an', 'AC an']"
     }, 
     {
         "role": "assistant",
@@ -19,39 +19,6 @@
     },
     {
         "role": "user",
-        "content": "How about 5 queries for `music_off`?"
-    }, 
-    {
-        "role": "assistant",
-        "content": [
-            "Musik aus",
-            "Mach die Musik aus",
-            "Schalt die Musik ab",
-            "Kannst du die Musik ausmachen",
-            "Mach Musik aus jetzt"
-        ]
-    },
-    {
-        "role": "user",
-        "content": "How about 10 queries for `seat_massage_on`?"
-    },
-    {
-        "role": "assistant",
-        "content": [
-            "Sitzmassage anmachen",
-            "Gib mir eine Massage",
-            "Massier mich",
-            "Kannst du die Massage einschalten",
-            "Sitz Massage einschalten",
-            "Aktivier die Massage",
-            "Massage starten",
-            "Schalte die Sitzmassage ein",
-            "Ich will eine Massage",
-            "Ich brauche eine Massage"
-        ]
-    },
-    {
-        "role": "user",
-        "content": "Now generate {num_samples} queries for the intent {intent}. Please return the queries as a list of strings."
+        "content": "Now generate {num_samples} queries for the intent {intent}. Here are some examples: {examples}"
     }
 ]

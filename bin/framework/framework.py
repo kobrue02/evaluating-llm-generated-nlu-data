@@ -163,7 +163,9 @@ class Framework:
 
         return dict(results)
 
-    def __apply_framework(self, references: list | str = None, hypotheses: list | str = None) -> dict:
+    def __apply_framework(
+        self, references: list | str = None, hypotheses: list | str = None
+    ) -> dict:
         """
         Apply the framework to a text generation model.
         Returns:
@@ -211,13 +213,13 @@ class Framework:
 
             references = None
             hypotheses = []
-            
+
             hypotheses = dataset_a[dataset_a.intent == intent].text.tolist()
             self.logger.info("Number of hypotheses: {}".format(len(hypotheses)))
 
             if dataset_b:
                 references = dataset_b[dataset_b.intent == intent].text.tolist()
-            
+
             if not hypotheses:
                 self.logger.warning(
                     "No data found for intent {}. Skipping evaluation.".format(intent)

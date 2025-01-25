@@ -23,6 +23,7 @@ from sklearn.cluster import KMeans
 cistem = Cistem()
 logger = logging.getLogger(__name__)
 
+
 class Metric(Enum):
     PERPLEXITY = "perplexity"
     DISTINCT_1 = "distinct_1"

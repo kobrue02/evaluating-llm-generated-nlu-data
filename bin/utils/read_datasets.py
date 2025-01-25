@@ -8,7 +8,9 @@ def read_sipgate_dataset() -> pd.DataFrame:
     """
     dataset = pd.read_csv("data/sipgate_data.csv")
     dataset.rename(columns={"phraseIntent": "intent"}, inplace=True)
-    dataset = dataset[["text", "intent", "occurrences", "phraseEntTypes", "annotations"]]
+    dataset = dataset[
+        ["text", "intent", "occurrences", "phraseEntTypes", "annotations"]
+    ]
     return dataset
 
 

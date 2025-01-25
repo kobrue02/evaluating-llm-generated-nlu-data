@@ -5,8 +5,24 @@ Author: Konrad Brüggemann
 """
 
 from typing import List, Dict
+from string import Formatter
 
 import json
+
+
+def extract_variable_names(template):
+    """
+    Extract variable names from a template.
+    Args:
+        template (str): The template.
+    Returns:
+        List[str]: The variable names.
+    """
+    return [
+        field_name
+        for _, field_name, _, _ in Formatter().parse(template)
+        if field_name is not None
+    ]
 
 
 class Prompt:
@@ -14,7 +30,16 @@ class Prompt:
     A class to represent a prompt.
     """
 
-    def __init__(self, prompt: List[Dict], intent: str = None):
+    def __init__(
+        self, prompt: List[Dict], intent: str = None, examples: List[str] = None
+    ):
+        """
+        Initialize a prompt.
+        Args:
+            prompt (List[Dict]): The prompt.
+            intent (str): The intent of the prompt.
+            examples (List[str]): Examples to append to the prompt.
+        """
         self.prompt = prompt
         self.intent = intent
 
@@ -32,7 +57,10 @@ class Prompt:
 
 
 def load_prompt(
-    path: str = None, id: int = None, generated_queries: List[str] = None, **kwargs
+    path: str = None,
+    id: int = None,
+    generated_queries: List[str] = None,
+    **kwargs,
 ) -> Prompt:
     """
     Load a prompt from a file.
@@ -60,12 +88,15 @@ def load_prompt(
 
     if isinstance(prompt, str):
         return Prompt(
-            [{"role": "user", "content": prompt}], intent=kwargs.get("intent")
+            [{"role": "user", "content": prompt}],
+            intent=kwargs.get("intent")
         )
     else:
         for i, message in enumerate(prompt):
             if message.get("role") == "user":
-                prompt[i]["content"] = str(prompt[i]["content"].format(**kwargs))
+                for var in extract_variable_names(message["content"]):
+                    if var in kwargs:
+                        message["content"] = message["content"].format(**kwargs)
             if message.get("role") == "assistant":
                 prompt[i]["content"] = str(prompt[i]["content"])
 
@@ -93,6 +124,6 @@ def load_prompt(
 
 if __name__ == "__main__":
     prompt = load_prompt(
-        path="bin/prompts/chain_of_thought_simple.json", intent="ac_on", num_samples=10
+        path="bin/prompts/chain_of_thought_simple.json", intent="ac_on", num_samples=10, examples=["example1", "example2"]
     )
     print(prompt)

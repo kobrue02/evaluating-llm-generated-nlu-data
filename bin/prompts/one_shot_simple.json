@@ -5,20 +5,20 @@
     }, 
     {
         "role": "user",
-        "content": "Can you generate 5 queries for the intent `ac_on`?"
+        "content": "Can you generate 5 German queries for the intent `ac_on`? Here is an example: ['Mach die Klima an']"
     }, 
     {
         "role": "assistant",
         "content": [
-            "Turn on the AC",
-            "AC on",
-            "Put on the air con",
-            "Can you turn on AC",
-            "Switch on the air conditioning"
-            ]
+            "Mach die Klimaanlage an",
+            "AC anmachen",
+            "Klimaanlage an",
+            "Kannst du die Klima anmachen",
+            "Klimaanlage einschalten bitte"
+        ]
     },
     {
         "role": "user",
-        "content": "Now generate {num_samples} queries for the intent {intent}. Please return the queries as a list of strings."
+        "content": "Now generate {num_samples} queries for the intent {intent}. Here is an example: {examples}"
     }
 ]
