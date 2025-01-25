@@ -200,7 +200,7 @@ class DataGenerationModel:
 
         return synthetic_data
 
-    def _parse_output(self, output_text: str) -> List[str]:
+    def _parse_output(self, output_text: str) -> List[str] | None:
         """
         Parse the output text and extract the queries.
 
@@ -212,20 +212,15 @@ class DataGenerationModel:
         """
         try:
             output_queries = ast.literal_eval(output_text)
+            if isinstance(output_queries, list):
+                return output_queries
+            elif isinstance(output_queries, list[tuple]):
+                return [query[0] for query in output_queries]
+            elif isinstance(output_queries, str) and output_queries[0] == "[" and output_queries[-1] == "]":
+                return output_queries[1:-1].split(",").strip("'")
         except (ValueError, SyntaxError):
             self.logger.warning("Fallback to line splitting for output parsing.")
             output_queries = output_text.strip().split("\n")
 
-        if isinstance(output_queries, str):
-            output_queries = [output_queries]
-
-        elif not isinstance(output_queries, list):
-            self.logger.error(f"Unexpected output format: {type(output_queries)}")
+        if not isinstance(output_queries, list):
             raise ValueError("Unexpected output format")
-
-        # Ensure only valid strings are returned
-        return [
-            query.strip()
-            for query in output_queries
-            if isinstance(query, str) and query.strip()
-        ]
