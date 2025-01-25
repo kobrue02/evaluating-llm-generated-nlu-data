@@ -148,6 +148,9 @@ class DataGenerationModel:
             generated_queries = []
             retries = 0
 
+            examples = self.reference_dataset[self.reference_dataset.intent == intent].text.tolist()
+            examples = examples[:samples_per_intent]
+
             while remaining_samples > 0 and retries < max_retries:
                 retries += 1
                 batch_size = min(10, remaining_samples)
@@ -156,6 +159,7 @@ class DataGenerationModel:
                     intent=intent,
                     num_samples=batch_size,
                     generated_queries=generated_queries,
+                    examples=examples
                 )
                 try:
                     batch_data = self.generate_synthetic_data(prompt)
