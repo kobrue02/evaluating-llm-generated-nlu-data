@@ -7,7 +7,6 @@ def clean_sipgate_dataset(df: pd.DataFrame) -> pd.DataFrame:
     """
     # deduplicate text column
     df = df.drop_duplicates(subset="text")
-    df.set_index("intent", inplace=True)
 
     # keep only intents with more than 20 and less than 1000 samples
     df = df.groupby("intent").filter(lambda x: len(x) > 100 and len(x) < 500)
