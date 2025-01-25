@@ -19,6 +19,6 @@
     },
     {
         "role": "user",
-        "content": "Now generate {num_samples} queries for the intent {intent}. Here are some examples: {examples}"
+        "content": "Now generate {num_samples} queries for the intent {intent}. Here are some examples: {examples[:3]}. Return a list of strings."
     }
 ]

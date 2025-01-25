@@ -149,7 +149,10 @@ class DataGenerationModel:
             retries = 0
 
             examples = self.reference_dataset[self.reference_dataset.intent == intent].text.tolist()
-            examples = examples[:samples_per_intent]
+            if prompt_id == "few_shot_simple":
+                examples = examples[:3]
+            elif prompt_id == "one_shot_simple":
+                examples = examples[:1]
 
             while remaining_samples > 0 and retries < max_retries:
                 retries += 1
