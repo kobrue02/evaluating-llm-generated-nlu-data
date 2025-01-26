@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from transformers import pipeline
 from tqdm import tqdm
-from typing import List
+from typing import List, Optional
 
 from bin.data_generation.construct_prompt import Prompt, load_prompt
 from bin.utils.types import DataSet
@@ -16,11 +16,25 @@ torch.random.manual_seed(0)
 
 
 class DataGenerationModel:
-    def __init__(self, *args, model=None, tokenizer=None, reference_dataset: pd.DataFrame = None):
+    def __init__(
+        self,
+        *args,
+        model=None,
+        tokenizer=None,
+        reference_dataset: Optional[pd.DataFrame] = None,
+    ):
         self.model = model
         self.tokenizer = tokenizer
         self.reference_dataset = reference_dataset
 
+        self._initialize_logger()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.logger.info(f"Using device: {self.device}")
+
+        self.pipe = self._initialize_pipeline()
+
+    def _initialize_logger(self):
+        """Initialize the logger."""
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
         handler = logging.StreamHandler()
@@ -29,12 +43,11 @@ class DataGenerationModel:
         )
         self.logger.addHandler(handler)
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.logger.info(f"Using device: {self.device}")
-
+    def _initialize_pipeline(self):
+        """Initialize the text generation pipeline."""
         self.logger.info("Initializing pipeline")
         try:
-            self.pipe = pipeline(
+            return pipeline(
                 "text-generation", model=self.model, tokenizer=self.tokenizer
             )
         except Exception as e:
@@ -42,6 +55,7 @@ class DataGenerationModel:
             raise
 
     def generate_synthetic_data(self, prompt: Prompt) -> DataSet:
+        """Generate synthetic data from a prompt."""
         synthetic_data = DataSet()
 
         generation_args = {
@@ -77,130 +91,106 @@ class DataGenerationModel:
         return synthetic_data
 
     def build_dataset_from_intents(
-        self, prompt_id: str, intents: list[str], samples_per_intent: int = 10
+        self, prompt_id: str, intents: List[str], samples_per_intent: int = 10
     ) -> DataSet:
+        """Build a dataset from a list of intents."""
         synthetic_data = DataSet()
-        max_retries = 10
 
         for intent in tqdm(intents, desc="Processing intents"):
             self.logger.info(f"Generating data for intent: {intent}")
-            unique_samples = OrderedDict()
-            remaining_samples = samples_per_intent
-            generated_queries = []
-            retries = 0
+            synthetic_data += self._process_intent(prompt_id, intent, samples_per_intent)
 
-            while remaining_samples > 0 and retries < max_retries:
-                retries += 1
-                batch_size = min(10, remaining_samples)
-                prompt = load_prompt(
-                    id=prompt_id,
-                    intent=intent,
-                    num_samples=batch_size,
-                    generated_queries=generated_queries,
-                )
-                try:
-                    batch_data = self.generate_synthetic_data(prompt)
-                    self.logger.info(
-                        f"Generated {len(batch_data)} samples for {intent}"
-                    )
-                    self.logger.info(f"The generated samples are: {batch_data}")
-                    for sample in batch_data:
-                        if sample not in unique_samples:
-                            unique_samples[sample] = None
-                            generated_queries.append(sample)
-                            remaining_samples -= 1
-                        if remaining_samples == 0:
-                            break
-                    self.logger.info(
-                        f"Number of queries: {len(generated_queries)}, Number of labels: {len([prompt.intent] * len(generated_queries))}"
-                    )
-                except MalformedOutputError as e:
-                    self.logger.warning(f"MalformedOutputError for {intent}: {e}")
-                    continue
-                except Exception as e:
-                    self.logger.error(f"Unexpected error for {intent}: {e}")
-                    continue
-                self.logger.info(
-                    f"Remaining samples for intent {intent}: {remaining_samples}"
-                )
-            synthetic_data += DataSet(
-                data=generated_queries, labels=[prompt.intent] * len(generated_queries)
-            )
-
-        # Final validation to ensure consistent dataset
-        if len(synthetic_data.data) != len(synthetic_data.labels):
-            self.logger.error("Mismatch between queries and labels in dataset.")
-            raise ValueError("Mismatch between queries and labels in dataset.")
-
+        self._validate_dataset(synthetic_data)
         return synthetic_data
 
-    def build_dataset_from_reference(self, prompt_id: str, samples_per_intent: int = 10) -> DataSet:
-
+    def build_dataset_from_reference(
+        self, prompt_id: str, samples_per_intent: int = 10
+    ) -> DataSet:
+        """Build a dataset using a reference dataset."""
         synthetic_data = DataSet()
-        max_retries = 10
+
+        if self.reference_dataset is None:
+            raise ValueError("Reference dataset is not provided.")
 
         intents = self.reference_dataset.intent.unique()
 
         for intent in tqdm(intents, desc="Processing intents"):
             self.logger.info(f"Generating data for intent: {intent}")
-            unique_samples = OrderedDict()
-            remaining_samples = samples_per_intent
-            generated_queries = []
-            retries = 0
-
-            examples = self.reference_dataset[self.reference_dataset.intent == intent].text.tolist()
-            if prompt_id == "few_shot_simple":
-                examples = examples[:3]
-            elif prompt_id == "one_shot_simple":
-                examples = examples[:1]
-
-            while remaining_samples > 0 and retries < max_retries:
-                retries += 1
-                batch_size = min(10, remaining_samples)
-                prompt = load_prompt(
-                    id=prompt_id,
-                    intent=intent,
-                    num_samples=batch_size,
-                    generated_queries=generated_queries,
-                    examples=examples
-                )
-                try:
-                    batch_data = self.generate_synthetic_data(prompt)
-                    self.logger.info(
-                        f"Generated {len(batch_data)} samples for {intent}"
-                    )
-                    self.logger.info(f"The generated samples are: {batch_data}")
-                    for sample in batch_data:
-                        if sample not in unique_samples:
-                            unique_samples[sample] = None
-                            generated_queries.append(sample)
-                            remaining_samples -= 1
-                        if remaining_samples == 0:
-                            break
-                    self.logger.info(
-                        f"Number of queries: {len(generated_queries)}, Number of labels: {len([prompt.intent] * len(generated_queries))}"
-                    )
-                except MalformedOutputError as e:
-                    self.logger.warning(f"MalformedOutputError for {intent}: {e}")
-                    continue
-                except Exception as e:
-                    self.logger.error(f"Unexpected error for {intent}: {e}")
-                    continue
-                self.logger.info(
-                    f"Remaining samples for intent {intent}: {remaining_samples}"
-                )
-            synthetic_data += DataSet(
-                data=generated_queries, labels=[prompt.intent] * len(generated_queries)
+            examples = self._get_examples_from_reference(intent, prompt_id)
+            synthetic_data += self._process_intent(
+                prompt_id, intent, samples_per_intent, examples
             )
 
-        # Final validation to ensure consistent dataset
-        if len(synthetic_data.data) != len(synthetic_data.labels):
+        self._validate_dataset(synthetic_data)
+        return synthetic_data
+
+    def _process_intent(
+        self,
+        prompt_id: str,
+        intent: str,
+        samples_per_intent: int,
+        examples: Optional[List[str]] = None,
+    ) -> DataSet:
+        """Process a single intent to generate synthetic data."""
+        unique_samples = OrderedDict()
+        remaining_samples = samples_per_intent
+        generated_queries = []
+        max_retries = 10
+        retries = 0
+
+        while remaining_samples > 0 and retries < max_retries:
+            retries += 1
+            batch_size = min(10, remaining_samples)
+            prompt = load_prompt(
+                id=prompt_id,
+                intent=intent,
+                num_samples=batch_size,
+                generated_queries=generated_queries,
+                examples=examples,
+            )
+            try:
+                batch_data = self._generate_batch_data(prompt, intent)
+                for sample in batch_data:
+                    if sample not in unique_samples:
+                        unique_samples[sample] = None
+                        generated_queries.append(sample)
+                        remaining_samples -= 1
+                    if remaining_samples == 0:
+                        break
+            except MalformedOutputError as e:
+                self.logger.warning(f"MalformedOutputError for {intent}: {e}")
+                continue
+            except Exception as e:
+                self.logger.error(f"Unexpected error for {intent}: {e}")
+                continue
+
+        return DataSet(
+            data=generated_queries, labels=[intent] * len(generated_queries)
+        )
+
+    def _generate_batch_data(self, prompt: Prompt, intent: str) -> List[str]:
+        """Generate and validate batch data for a prompt."""
+        batch_data = self.generate_synthetic_data(prompt)
+        self.logger.info(f"Generated {len(batch_data)} samples for {intent}")
+        self.logger.info(f"The generated samples are: {batch_data}")
+        return batch_data.data
+
+    def _get_examples_from_reference(self, intent: str, prompt_id: str) -> List[str]:
+        """Retrieve examples from the reference dataset."""
+        examples = self.reference_dataset[self.reference_dataset.intent == intent].text.tolist()
+        if prompt_id == "few_shot_simple":
+            return examples[:3]
+        elif prompt_id == "one_shot_simple":
+            return examples[:1]
+        return examples
+
+    def _validate_dataset(self, dataset: DataSet):
+        """Validate the dataset to ensure consistency."""
+        if len(dataset.data) != len(dataset.labels):
             self.logger.error("Mismatch between queries and labels in dataset.")
             raise ValueError("Mismatch between queries and labels in dataset.")
 
-        return synthetic_data
-
-    def _parse_output(self, output_text: str) -> List[str] | None:
+    def _parse_output(self, output_text: str) -> List[str]:
         """
         Parse the output text and extract the queries.
 
@@ -217,10 +207,11 @@ class DataGenerationModel:
             elif isinstance(output_queries, list[tuple]):
                 return [query[0] for query in output_queries]
             elif isinstance(output_queries, str) and output_queries[0] == "[" and output_queries[-1] == "]":
-                return output_queries[1:-1].split(",").strip("'")
+                return [q.strip().strip("'") for q in output_queries[1:-1].split(",")]
         except (ValueError, SyntaxError):
             self.logger.warning("Fallback to line splitting for output parsing.")
             output_queries = output_text.strip().split("\n")
 
         if not isinstance(output_queries, list):
             raise ValueError("Unexpected output format")
+        return output_queries

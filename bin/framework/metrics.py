@@ -10,7 +10,6 @@ import math
 import nltk
 import numpy as np
 import torch
-
 from collections import defaultdict
 from enum import Enum
 from nltk import ngrams
@@ -41,28 +40,39 @@ class Metric(Enum):
     AVERAGE_N_OF_CHARACTERS = "average_n_of_characters"
 
 
+def _validate_text_input(text: str | list) -> list:
+    """Validate and preprocess text input."""
+    if isinstance(text, str):
+        text = [text]
+    return text
+
+
+def _calculate_ngrams(text: str, n: int) -> list:
+    """Calculate n-grams for a given text."""
+    tokens = text.split()
+    return list(ngrams(tokens, n))
+
+
 def calculate_perplexity(
     text: str | list, model=None, tokenizer=None, base=2, max_perplexity=10000
-):
+) -> float:
     """
     Calculate the perplexity of a given text using BERT's masked language modeling.
 
     Args:
-        text (str): The text to calculate the perplexity of.
+        text (str | list): The text to calculate the perplexity of.
         model (transformers.PreTrainedModel): The BERT model. By default, uses bert-base-uncased.
         tokenizer (transformers.PreTrainedTokenizer): The tokenizer. By default, uses bert-base-uncased.
 
     Returns:
         float: The perplexity of the text.
     """
-
-    if isinstance(text, str):
-        text = [text]
+    text = _validate_text_input(text)
     scores = []
     for t in text:
         if not t:
             return 0.0
-        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+        inputs = tokenizer(t, return_tensors="pt", padding=True, truncation=True)
         with torch.no_grad():
             outputs = model(**inputs, labels=inputs["input_ids"])
         loss = outputs.loss
@@ -71,19 +81,20 @@ def calculate_perplexity(
     return np.mean(scores)
 
 
-def distinct_n(text: str | list, n):
+def distinct_n(text: str | list, n: int) -> float:
     """
     Calculate the distinct-n metric of a given text.
+
     Args:
-        text (str): The text to calculate the distinct-n of.
+        text (str | list): The text to calculate the distinct-n of.
         n (int): The n-gram order.
+
     Returns:
         float: The distinct-n of the text.
     """
-    if isinstance(text, list):
-        text = " ".join(text)
-    tokens = text.split()
-    ngrams_list = list(ngrams(tokens, n))
+    text = _validate_text_input(text)
+    text = " ".join(text)
+    ngrams_list = _calculate_ngrams(text, n)
     try:
         distinct = len(set(ngrams_list)) / len(ngrams_list)
     except ZeroDivisionError:
@@ -91,18 +102,19 @@ def distinct_n(text: str | list, n):
     return distinct
 
 
-def type_token_ratio(text):
+def type_token_ratio(text: str | list) -> float:
     """
     Calculate the type-token ratio of a given text using the Cistem stemmer.
+
     Args:
-        text (str): The text to calculate the type-token ratio of.
+        text (str | list): The text to calculate the type-token ratio of.
+
     Returns:
         float: The type-token ratio of the text.
     """
+    text = _validate_text_input(text)
     if not text:
         return 0.0
-    elif isinstance(text, str):
-        text = [text]
     ttrs = []
     for t in text:
         tokens = t.split()
@@ -112,19 +124,19 @@ def type_token_ratio(text):
     return np.mean(ttrs)
 
 
-def moving_average_ttr(text, window_size=100):
+def moving_average_ttr(text: str | list, window_size: int = 100) -> float:
     """
     Calculate the moving average type-token ratio of a given text using the Cistem stemmer.
-    Args:
-        text (str): The text to calculate the moving average type-token ratio of.
-        window_size (int): The window size for the moving average.
-    Returns:
-        list: The moving average type-token ratio of the text.
-    """
-    ttrs = []
-    if isinstance(text, str):
-        text = [text]
 
+    Args:
+        text (str | list): The text to calculate the moving average type-token ratio of.
+        window_size (int): The window size for the moving average.
+
+    Returns:
+        float: The moving average type-token ratio of the text.
+    """
+    text = _validate_text_input(text)
+    ttrs = []
     for t in text:
         tokens = t.split()
         for i in range(len(tokens) - window_size):
@@ -133,23 +145,20 @@ def moving_average_ttr(text, window_size=100):
             ttr = len(window_types) / len(window)
             if not math.isnan(ttr):
                 ttrs.append(ttr)
-    if not ttrs:
-        return 0.0
-
-    return np.mean(ttrs)
+    return np.mean(ttrs) if ttrs else 0.0
 
 
 def average_n_of_tokens(text: str | list) -> float:
     """
     Calculate the average number of tokens in a list of texts.
+
     Args:
         text (str | list): The text or list of texts.
-        n (int): The number of tokens to calculate the average of.
+
     Returns:
         float: The average number of tokens.
     """
-    if isinstance(text, str):
-        text = [text]
+    text = _validate_text_input(text)
     token_counts = [len(t.split()) for t in text]
     return np.mean(token_counts)
 
@@ -157,40 +166,34 @@ def average_n_of_tokens(text: str | list) -> float:
 def average_n_of_characters(text: str | list) -> float:
     """
     Calculate the average number of characters in a list of texts.
+
     Args:
         text (str | list): The text or list of texts.
-        n (int): The number of characters to calculate the average of.
+
     Returns:
         float: The average number of characters.
     """
-    if isinstance(text, str):
-        text = [text]
+    text = _validate_text_input(text)
     character_counts = [len(t) for t in text]
     return np.mean(character_counts)
 
 
-def bleu_score(hypothesis: str, reference: str) -> float:
+def bleu_score(hypothesis: str | list, reference: str | list) -> float:
     """
     Calculate the BLEU score of a given hypothesis with respect to a reference.
+
     Args:
-        hypothesis (str): The hypothesis text.
-        reference (str): The reference text.
+        hypothesis (str | list): The hypothesis text.
+        reference (str | list): The reference text.
+
     Returns:
         float: The BLEU score of the hypothesis.
     """
-
-    if isinstance(hypothesis, str):
-        hypotheses = [hypothesis]
-    else:
-        hypotheses = hypothesis
-
-    if isinstance(reference, str):
-        references = [reference.split()]
-    else:
-        references = [r.split() for r in reference]
-
+    hypothesis = _validate_text_input(hypothesis)
+    reference = _validate_text_input(reference)
+    references = [r.split() for r in reference]
     bleu_scores = []
-    for text in hypotheses:
+    for text in hypothesis:
         bleu = sentence_bleu(
             references,
             text.split(),
@@ -202,67 +205,44 @@ def bleu_score(hypothesis: str, reference: str) -> float:
     return np.mean(bleu_scores)
 
 
-def task_specific_performance(train_data, test_data, model=None):
-    raise NotImplementedError
-
-
-def inter_sentence_similarity(sentences: list[str], model=None):
+def inter_sentence_similarity(sentences: list[str], model=None) -> float:
     """
     Calculate the inter-sentence similarity of a list of sentences using a sentence embedding model.
+
     Args:
         sentences (list): The list of sentences.
         model (sentence_transformers.SentenceTransformer): The sentence embedding model.
+
     Returns:
         float: The inter-sentence similarity of the sentences.
     """
-
-    if isinstance(sentences, str):
-        sentences = [sentences]
-
+    sentences = _validate_text_input(sentences)
     if not sentences or len(sentences) < 2:
-        logger.warning(
-            "At least two sentences are required for inter-sentence similarity."
-        )
+        logger.warning("At least two sentences are required for inter-sentence similarity.")
         return 0.0
 
-    # Generate embeddings
-    embeddings = model.encode(sentences)
-
-    # Ensure embeddings are 2D
-    if embeddings.ndim == 1:
-        embeddings = embeddings.reshape(1, -1)
-
-    # Calculate cosine similarities
+    embeddings = _calculate_embeddings(sentences, model)
     similarities = cosine_similarity(embeddings)
 
-    # Exclude diagonal (self-similarity) elements and compute the mean
     n = similarities.shape[0]
-    sum_of_similarities = np.sum(similarities) - np.sum(
-        np.diag(similarities)
-    )  # Exclude diagonal
-    num_comparisons = n * (n - 1)  # Total number of off-diagonal elements
+    sum_of_similarities = np.sum(similarities) - np.sum(np.diag(similarities))
+    num_comparisons = n * (n - 1)
 
     inter_sentence_similarity = sum_of_similarities / num_comparisons
-    if math.isnan(inter_sentence_similarity):
-        return 0.0
-    return inter_sentence_similarity
+    return inter_sentence_similarity if not math.isnan(inter_sentence_similarity) else 0.0
 
 
-def create_entity_grid(sentences):
+def _calculate_entity_grid(sentences: list[str]) -> defaultdict:
     """Create an entity grid from a list of sentences."""
     entities = defaultdict(lambda: ["_"] * len(sentences))
-
     for i, sentence in enumerate(sentences):
         for entity, role in extract_entities(sentence):
             entities[entity][i] = role
-
     return entities
 
 
-def extract_entities(sentence):
+def extract_entities(sentence: str) -> list[tuple]:
     """Extract entities and their syntactic roles from a sentence."""
-    # This is a simplified version. In practice, you'd use NLP tools
-    # to extract entities and their syntactic roles (S, O, X)
     entities = []
     for word in sentence.split():
         if word.istitle():
@@ -270,7 +250,7 @@ def extract_entities(sentence):
     return entities
 
 
-def compute_transitions(grid):
+def _calculate_transitions(grid: defaultdict) -> defaultdict:
     """Compute transitions between entity mentions in a grid of sentences."""
     transitions = defaultdict(int)
     for entity_mentions in grid.values():
@@ -280,53 +260,49 @@ def compute_transitions(grid):
     return transitions
 
 
-def discourse_coherence(sentences):
+def discourse_coherence(sentences: list[str]) -> float:
     """Calculate the coherence of a list of sentences using the entity grid model."""
-    grid = create_entity_grid(sentences)
-    transitions = compute_transitions(grid)
+    grid = _calculate_entity_grid(sentences)
+    transitions = _calculate_transitions(grid)
 
-    # Calculate probabilities of transitions
     total_transitions = sum(transitions.values())
     probabilities = {t: count / total_transitions for t, count in transitions.items()}
 
-    # Calculate coherence score (e.g., using entropy)
     coherence_score = -sum(p * np.log2(p) for p in probabilities.values() if p > 0)
-
     return coherence_score
 
 
-def distance_to_centroid(hypotheses, model):
+def _calculate_embeddings(text: list[str], model) -> np.ndarray:
+    """Encode text into embeddings using a sentence transformer model."""
+    return model.encode(text)
+
+
+def distance_to_centroid(hypotheses: list[str], model) -> float:
     """Calculate the distance of hypotheses to the centroid of their embeddings."""
-    embeddings = model.encode(hypotheses)
+    embeddings = _calculate_embeddings(hypotheses, model)
     centroid = np.mean(embeddings, axis=0)
     distances = [np.linalg.norm(e - centroid) for e in embeddings]
     return np.mean(distances)
 
 
-def similarity_by_clustering(references, hypotheses, model):
-    """Calculate the similarity of hypotheses to reference clusters."""
-    # Cluster embeddings of references
-    reference_embeddings = model.encode(references)
-    reference_centroids = cluster_embeddings(reference_embeddings)
-
-    # Calculate similarity of hypotheses to reference clusters
-    hypothesis_embeddings = model.encode(hypotheses)
-    similarities = []
-    for h in hypothesis_embeddings:
-        similarities.append(max(cosine_similarity(h, c) for c in reference_centroids))
-
-    return np.mean(similarities)
-
-
-def cluster_embeddings(embeddings):
+def _calculate_clusters(embeddings: np.ndarray, n_clusters: int = 5) -> np.ndarray:
     """Cluster embeddings using K-means."""
-    # Cluster embeddings using K-means
-    kmeans = KMeans(n_clusters=5)
+    kmeans = KMeans(n_clusters=n_clusters)
     kmeans.fit(embeddings)
     return kmeans.cluster_centers_
 
 
-def levenshtein_distance(s1, s2):
+def similarity_by_clustering(references: list[str], hypotheses: list[str], model) -> float:
+    """Calculate the similarity of hypotheses to reference clusters."""
+    reference_embeddings = _calculate_embeddings(references, model)
+    reference_centroids = _calculate_clusters(reference_embeddings)
+
+    hypothesis_embeddings = _calculate_embeddings(hypotheses, model)
+    similarities = [max(cosine_similarity([h], reference_centroids)[0]) for h in hypothesis_embeddings]
+    return np.mean(similarities)
+
+
+def levenshtein_distance(s1: str, s2: str) -> int:
     """Calculate the Levenshtein distance between two strings."""
     if len(s1) < len(s2):
         return levenshtein_distance(s2, s1)
@@ -344,43 +320,36 @@ def levenshtein_distance(s1, s2):
     return previous_row[-1]
 
 
-def cartesian_product(list_a: list[str], list_b: list[str]):
-    """Calculate the Cartesian product of two lists."""
-    return [(a, b) for a in list_a for b in list_b]
-
-
-def mean_levenshtein_distance(references, hypotheses):
+def mean_levenshtein_distance(references: list[str], hypotheses: list[str]) -> float:
     """Calculate the mean Levenshtein distance between hypotheses and references."""
-    c_product = cartesian_product(references, hypotheses)
-    distances = [levenshtein_distance(r, h) for r, h in c_product]
+    distances = [levenshtein_distance(r, h) for r in references for h in hypotheses]
     return np.mean(distances)
 
 
-def pos_tag_n_grams_diversity(references, hypotheses, n):
+def pos_tag_n_grams_diversity(references: list[str], hypotheses: list[str], n: int) -> float:
     """Calculate the diversity of n-grams of POS tags in hypotheses with respect to references."""
+    reference_n_grams = set()
     for sample in references:
-        reference_n_grams = n_grams_of_pos_tags(sample, n)
+        reference_n_grams.update(n_grams_of_pos_tags(sample, n))
+
+    hypothesis_n_grams = set()
     for sample in hypotheses:
-        hypothesis_n_grams = n_grams_of_pos_tags(sample, n)
-    reference_n_grams = set(reference_n_grams)
-    hypothesis_n_grams = set(hypothesis_n_grams)
+        hypothesis_n_grams.update(n_grams_of_pos_tags(sample, n))
+
     try:
-        diversity = len(hypothesis_n_grams.difference(reference_n_grams)) / len(
-            hypothesis_n_grams
-        )
+        diversity = len(hypothesis_n_grams.difference(reference_n_grams)) / len(hypothesis_n_grams)
     except ZeroDivisionError:
         diversity = 0.0
     return diversity
 
 
-def n_grams_of_pos_tags(text, n):
+def n_grams_of_pos_tags(text: str, n: int) -> list:
     """Calculate n-grams of POS tags for a given text."""
     pos_tags = get_pos_tags(text)
-    n_grams = list(ngrams(pos_tags, n))
-    return n_grams
+    return list(ngrams(pos_tags, n))
 
 
-def get_pos_tags(text):
+def get_pos_tags(text: str) -> list:
     """Get POS tags for a given text."""
     tokens = nltk.word_tokenize(text)
     pos_tags = nltk.pos_tag(tokens)
