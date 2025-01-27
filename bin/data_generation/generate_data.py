@@ -208,6 +208,8 @@ class DataGenerationModel:
                 return [query[0] for query in output_queries]
             elif isinstance(output_queries, str) and output_queries[0] == "[" and output_queries[-1] == "]":
                 return [q.strip().strip("'") for q in output_queries[1:-1].split(",")]
+            elif isinstance(output_queries, str) and "Here are the queries" in output_queries:
+                return self._parse_output(output_queries.split("Here are the queries")[1])
         except (ValueError, SyntaxError):
             self.logger.warning("Fallback to line splitting for output parsing.")
             output_queries = output_text.strip().split("\n")
