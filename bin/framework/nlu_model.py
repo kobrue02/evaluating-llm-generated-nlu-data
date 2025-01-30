@@ -1,99 +1,89 @@
-import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from typing import Dict, List, Union
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+from collections import Counter
 
+class IntentClassifier:
+    def __init__(self):
+        self.vectorizer = TfidfVectorizer()
+        self.model = RandomForestClassifier(random_state=42)
 
-class NLUModel:
-    def __init__(self, model_path: str, intent_threshold: float = 0.7):
+    def split_dataset(self, df: pd.DataFrame) -> tuple:
         """
-        Initialize the NLU model.
+        Splits the dataset into train and test sets ensuring each intent has 5 samples in the test set.
 
         Args:
-            model_path (str): Path to the fine-tuned model or name of the model on Hugging Face's model hub.
-            intent_threshold (float): Threshold for intent confidence.
-        """
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.intent_threshold = intent_threshold
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
-        self.model.eval()
-        self.id2label = self.model.config.id2label
-        self.label2id = {v: k for k, v in self.id2label.items()}
-
-    def predict(
-        self, text: Union[str, List[str]]
-    ) -> Union[Dict[str, float], List[Dict[str, float]]]:
-        """
-        Predict intents for given text(s).
-
-        Args:
-            text (Union[str, List[str]]): Input text or list of texts.
+            df (pd.DataFrame): DataFrame with columns 'text' and 'intent'.
 
         Returns:
-            Union[Dict[str, float], List[Dict[str, float]]]: Intent probabilities for each input.
+            train_df (pd.DataFrame): Training set.
+            test_df (pd.DataFrame): Test set.
         """
-        # Tokenize the input text(s)
-        inputs = self.tokenizer(
-            text, return_tensors="pt", padding=True, truncation=True, max_length=512
-        )
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        test_dfs = []
+        train_dfs = []
 
-        # Get model predictions
-        with torch.no_grad():
-            outputs = self.model(**inputs)
+        df = df.dropna()
+        for intent, group in df.groupby('intent'):
+            if len(group) >= 5:
+                test_samples = group.sample(5, random_state=42)
+                train_samples = group.drop(test_samples.index)
+            else:
+                test_samples = group
+                train_samples = pd.DataFrame()
 
-        # Convert logits to probabilities
-        probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
+            test_dfs.append(test_samples)
+            train_dfs.append(train_samples)
 
-        # Create a dictionary of intent probabilities for each input
-        results = []
-        for prob in probs:
-            intent_probs = {self.id2label[i]: p.item() for i, p in enumerate(prob)}
-            results.append(intent_probs)
+        test_df = pd.concat(test_dfs)
+        train_df = pd.concat(train_dfs)
 
-        return results[0] if isinstance(text, str) else results
+        return train_df, test_df
 
-    def is_consistent(self, sample: Dict[str, str]) -> bool:
+    def fit(self, train_df):
         """
-        Check if the model's prediction is consistent with the intended intent for a given sample.
+        Fits the classifier on the training data.
 
         Args:
-            sample (Dict[str, str]): A dictionary containing 'text' and 'intent' keys.
+            train_df (pd.DataFrame): Training data with columns 'query' and 'intent'.
+        """
+        X_train = self.vectorizer.fit_transform(train_df['query'])
+        y_train = train_df['intent']
+        self.model.fit(X_train, y_train)
+
+    def predict(self, texts):
+        """
+        Predicts intents for given texts.
+
+        Args:
+            texts (list of str): List of input texts.
 
         Returns:
-            bool: True if the prediction is consistent, False otherwise.
+            list: Predicted intents.
         """
-        text = sample["text"]
-        intended_intent = sample["intent"]
+        X = self.vectorizer.transform(texts)
+        return self.model.predict(X)
 
-        # Get model predictions
-        predictions = self.predict(text)
+    def evaluate(self, test_df):
+        """
+        Evaluates the model on the test data.
 
-        # Check if the intended intent has the highest probability
-        predicted_intent = max(predictions, key=predictions.get)
+        Args:
+            test_df (pd.DataFrame): Test data with columns 'query' and 'intent'.
 
-        # Check if the probability of the intended intent is above the threshold
-        is_above_threshold = predictions[intended_intent] >= self.intent_threshold
+        Returns:
+            str: Classification report.
+        """
+        X_test = self.vectorizer.transform(test_df['query'])
+        y_test = test_df['intent']
+        y_pred = self.model.predict(X_test)
+        return classification_report(y_test, y_pred)
 
-        return predicted_intent == intended_intent and is_above_threshold
-
-
-def nlu_consistency_filtering(
-    generated_samples: List[Dict[str, str]], nlu_model: NLUModel
-) -> List[Dict[str, str]]:
-    """
-    Filter generated samples based on NLU model consistency.
-
-    Args:
-        generated_samples (List[Dict[str, str]]): List of generated samples, each with 'text' and 'intent' keys.
-        nlu_model (NLUModel): The NLU model to use for consistency checking.
-
-    Returns:
-        List[Dict[str, str]]: Filtered list of consistent samples.
-    """
-    filtered_samples = []
-    for sample in generated_samples:
-        if nlu_model.is_consistent(sample):
-            filtered_samples.append(sample)
-    return filtered_samples
+if __name__ == '__main__':
+    df = pd.read_csv('output/few_shot_simple_data.csv')
+    model = IntentClassifier()
+    train_df, test_df = model.split_dataset(df)
+    model.fit(train_df)
+    report = model.evaluate(test_df)
+    print(report)
