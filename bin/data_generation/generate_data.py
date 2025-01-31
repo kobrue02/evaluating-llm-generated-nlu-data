@@ -203,17 +203,14 @@ class DataGenerationModel:
         try:
             if "Here are the queries" in output_text:
                 return self._parse_output(output_text.split("Here are the queries")[1])
-            # strip leading and trailing punctuation unless it's a list parenthesis
-            output_text = output_text.strip().strip(":\\").strip("\\")
-            if output_text[0] == "[" and output_text[-1] == "]":
-                return self._parse_output(output_text[1:-1])
+            # try to extract a list out of the output by stripping the text until the first '['
+            output_text = output_text[output_text.find("["):]
+            # rstrip any trailing characters behind the last ']'
+            output_text = output_text[:output_text.rfind("]") + 1]
             output_queries = ast.literal_eval(output_text)
-            if isinstance(output_queries, list):
-                return output_queries
-            elif isinstance(output_queries, list[tuple]):
-                return [query[0] for query in output_queries]
-            elif isinstance(output_queries, str) and output_queries[0] == "[" and output_queries[-1] == "]":
-                return [q.strip().strip("'") for q in output_queries[1:-1].split(",")]
+            if not isinstance(output_queries, list):
+                raise ValueError("Unexpected output format")
+            return output_queries
         except (ValueError, SyntaxError):
             self.logger.warning("Fallback to line splitting for output parsing.")
             output_queries = output_text.strip().split("\n")
