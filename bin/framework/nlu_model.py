@@ -2,13 +2,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
 from collections import Counter
 
 class IntentClassifier:
     def __init__(self):
         self.vectorizer = TfidfVectorizer()
-        self.model = RandomForestClassifier(random_state=42)
+        self.model = MultinomialNB()
 
     def split_dataset(self, df: pd.DataFrame) -> tuple:
         """
@@ -81,7 +82,7 @@ class IntentClassifier:
         return classification_report(y_test, y_pred)
 
 if __name__ == '__main__':
-    df = pd.read_csv('output/few_shot_simple_data.csv')
+    df = pd.read_csv('output/zero_shot_simple_data.csv')
     model = IntentClassifier()
     train_df, test_df = model.split_dataset(df)
     model.fit(train_df)
