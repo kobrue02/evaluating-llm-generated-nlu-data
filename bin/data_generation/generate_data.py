@@ -204,7 +204,9 @@ class DataGenerationModel:
             if "Here are the queries" in output_text:
                 return self._parse_output(output_text.split("Here are the queries")[1])
             # strip leading and trailing punctuation unless it's a list parenthesis
-            output_text = output_text.strip().strip(r":\\").strip("\\")
+            output_text = output_text.strip().strip(":\\").strip("\\")
+            if output_text[0] == "[" and output_text[-1] == "]":
+                return self._parse_output(output_text[1:-1])
             output_queries = ast.literal_eval(output_text)
             if isinstance(output_queries, list):
                 return output_queries

@@ -244,9 +244,13 @@ def _calculate_entity_grid(sentences: list[str]) -> defaultdict:
 def extract_entities(sentence: str) -> list[tuple]:
     """Extract entities and their syntactic roles from a sentence."""
     entities = []
+    words = nltk.word_tokenize(sentence)
+    tagger = nltk.pos_tag(words)
     for word in sentence.split():
-        if word.istitle():
-            entities.append((word, "S"))  # Assume all capitalized words are subjects
+        # identify subject
+        if "NN" in tagger[word]:
+            entities.append((word, "S"))
+            
     return entities
 
 
