@@ -203,18 +203,32 @@ class DataGenerationModel:
         try:
             if "Here are the queries" in output_text:
                 return self._parse_output(output_text.split("Here are the queries")[1])
-            # try to extract a list out of the output by stripping the text until the first '['
-            output_text = output_text[output_text.find("["):]
-            # rstrip any trailing characters behind the last ']'
-            output_text = output_text[:output_text.rfind("]") + 1]
+            
+            # Extract content between first '[' and last ']'
+            start = output_text.find("[")
+            end = output_text.rfind("]")
+            if start != -1 and end != -1:
+                output_text = output_text[start:end+1]
+            
+            # Try to parse as a Python literal
             output_queries = ast.literal_eval(output_text)
+
+            # Handle nested list case
+            if isinstance(output_queries, list) and len(output_queries) == 1 and isinstance(output_queries[0], str):
+                clean_string = output_queries[0].strip("'\\")
+                return self._parse_output(clean_string)
+
+            # Ensure output is a list
             if not isinstance(output_queries, list):
                 raise ValueError("Unexpected output format")
-            return output_queries
-        except (ValueError, SyntaxError):
-            self.logger.warning("Fallback to line splitting for output parsing.")
-            output_queries = output_text.strip().split("\n")
 
-        if not isinstance(output_queries, list):
-            raise ValueError("Unexpected output format")
+            return output_queries
+        
+        except (ValueError, SyntaxError) as e:
+            self.logger.warning(f"Fallback to line splitting for output parsing. Error: {str(e)}")
+            output_queries = [q.strip() for q in output_text.strip().split("\n") if q.strip()]
+
+        if not output_queries:
+            raise ValueError("No valid queries found after fallback parsing")
+
         return output_queries
