@@ -223,7 +223,7 @@ class DataGenerationModel:
                 raise ValueError("Unexpected output format")
 
             # Clean each query
-            output_queries = [q.strip().strip("'") for q in output_queries]
+            output_queries = [q.strip().strip("'").strip("\\").strip("]") for q in output_queries if q != ""]
 
             return output_queries
 
