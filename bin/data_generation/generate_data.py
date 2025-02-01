@@ -204,7 +204,7 @@ class DataGenerationModel:
         try:
             # Handle case where "Here are the queries" is in the text
             if "Here are the queries" in output_text:
-                return self._parse_output(output_text.split("Here are the queries")[1])
+                output_text = output_text.split("Here are the queries")[1]
 
             # Extract content between first '[' and last ']'
             start = output_text.find("[")
@@ -212,28 +212,25 @@ class DataGenerationModel:
             if start != -1 and end != -1:
                 output_text = output_text[start:end+1]
 
+            # Remove trailing '\']"' characters if present
+            output_text = re.sub(r"\\'\]\"$", "", output_text)
+
             # Try to parse as a Python literal
             output_queries = ast.literal_eval(output_text)
-
-            # Handle the case where we have a list with a single string that represents a list
-            if isinstance(output_queries, list) and len(output_queries) == 1 and isinstance(output_queries[0], str):
-                # Use regex to extract the content within the single quotes
-                match = re.search(r"'(\[.*?\])'", output_queries[0])
-                if match:
-                    inner_content = match.group(1)
-                    # Parse the inner content
-                    return ast.literal_eval(inner_content)
 
             # Ensure output is a list
             if not isinstance(output_queries, list):
                 raise ValueError("Unexpected output format")
 
+            # Clean each query
+            output_queries = [q.strip().strip("'") for q in output_queries]
+
             return output_queries
 
         except (ValueError, SyntaxError) as e:
             self.logger.warning(f"Fallback to line splitting for output parsing. Error: {str(e)}")
-            # Remove any surrounding brackets and quotes
-            clean_text = re.sub(r"^\[?'?\[?|'?\]?\]?$", "", output_text)
+            # Remove any surrounding brackets and quotes, and trailing '\']"' characters
+            clean_text = re.sub(r"^\[?'?\[?|'?\]?\]?$|\\'\]\"$", "", output_text)
             output_queries = [q.strip().strip("'") for q in clean_text.split(",") if q.strip()]
 
             if not output_queries:
