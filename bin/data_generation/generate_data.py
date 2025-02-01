@@ -16,6 +16,17 @@ import pandas as pd
 torch.random.manual_seed(0)
 
 
+def process_string(text: str) -> str:
+    # remove punctuation
+    text = re.sub(r"[^\w\s]", "", text)
+    # remove special characters
+    text = re.sub(r"[^a-zA-Z0-9\s]", "", text)
+    # remove leading/trailing whitespaces
+    text = text.strip()
+    # lowercase
+    return text.lower()
+
+
 class DataGenerationModel:
     def __init__(
         self,
@@ -226,11 +237,7 @@ class DataGenerationModel:
                 raise ValueError("Unexpected output format")
 
             # Clean each query
-            output_queries = [
-                q.strip().strip("'").strip('"').strip("\\").strip("]").strip("[")
-                for q in output_queries
-                if q.strip()  # Skip empty strings
-            ]
+            output_queries = [process_string(q) for q in output_queries if q.strip()]
 
             return output_queries
 
