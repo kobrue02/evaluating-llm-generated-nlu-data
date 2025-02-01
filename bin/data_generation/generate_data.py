@@ -226,8 +226,6 @@ class DataGenerationModel:
             # Remove unwanted characters (e.g., backslashes, quotes, brackets)
             output_text = re.sub(r"\\'", "'", output_text)  # Replace escaped single quotes
             output_text = re.sub(r"\\\"", "\"", output_text)  # Replace escaped double quotes
-            output_text = re.sub(r"\\\]\"$", "", output_text)  # Remove trailing '\']"'
-            output_text = re.sub(r"^\[|\]$", "", output_text)  # Remove leading/trailing brackets
 
             # Try to parse as a Python literal
             output_queries = ast.literal_eval(output_text)
@@ -250,4 +248,4 @@ class DataGenerationModel:
             if not output_queries:
                 raise ValueError("No valid queries found after fallback parsing")
 
-            return output_queries
+            return [process_string(q) for q in output_queries]
