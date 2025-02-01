@@ -192,48 +192,55 @@ class DataGenerationModel:
             raise ValueError("Mismatch between queries and labels in dataset.")
 
     def _parse_output(self, output_text: str) -> List[str]:
-        """
-        Parse the output text and extract the queries.
+    """
+    Parse the output text and extract the queries.
 
-        Args:
-            output_text (str): The generated text from the model.
+    Args:
+        output_text (str): The generated text from the model.
 
-        Returns:
-            List[str]: A list of parsed queries.
-        """
-        try:
-            # Handle case where "Here are the queries" is in the text
-            if "Here are the queries" in output_text:
-                output_text = output_text.split("Here are the queries")[1]
+    Returns:
+        List[str]: A list of parsed queries.
+    """
+    try:
+        # Handle case where "Here are the queries" is in the text
+        if "Here are the queries" in output_text:
+            output_text = output_text.split("Here are the queries")[1]
 
-            # Extract content between first '[' and last ']'
-            start = output_text.find("[")
-            end = output_text.rfind("]")
-            if start != -1 and end != -1:
-                output_text = output_text[start:end+1]
+        # Extract content between first '[' and last ']'
+        start = output_text.find("[")
+        end = output_text.rfind("]")
+        if start != -1 and end != -1:
+            output_text = output_text[start:end+1]
 
-            # Remove trailing '\']"' characters if present
-            output_text = re.sub(r"\\'\]\"$", "", output_text)
+        # Remove unwanted characters (e.g., backslashes, quotes, brackets)
+        output_text = re.sub(r"\\'", "'", output_text)  # Replace escaped single quotes
+        output_text = re.sub(r"\\\"", "\"", output_text)  # Replace escaped double quotes
+        output_text = re.sub(r"\\\]\"$", "", output_text)  # Remove trailing '\']"'
+        output_text = re.sub(r"^\[|\]$", "", output_text)  # Remove leading/trailing brackets
 
-            # Try to parse as a Python literal
-            output_queries = ast.literal_eval(output_text)
+        # Try to parse as a Python literal
+        output_queries = ast.literal_eval(output_text)
 
-            # Ensure output is a list
-            if not isinstance(output_queries, list):
-                raise ValueError("Unexpected output format")
+        # Ensure output is a list
+        if not isinstance(output_queries, list):
+            raise ValueError("Unexpected output format")
 
-            # Clean each query
-            output_queries = [q.strip().strip("'").strip("\\").strip("]") for q in output_queries if q != ""]
+        # Clean each query
+        output_queries = [
+            q.strip().strip("'").strip('"').strip("\\").strip("]").strip("[")
+            for q in output_queries
+            if q.strip()  # Skip empty strings
+        ]
 
-            return output_queries
+        return output_queries
 
-        except (ValueError, SyntaxError) as e:
-            self.logger.warning(f"Fallback to line splitting for output parsing. Error: {str(e)}")
-            # Remove any surrounding brackets and quotes, and trailing '\']"' characters
-            clean_text = re.sub(r"^\[?'?\[?|'?\]?\]?$|\\'\]\"$", "", output_text)
-            output_queries = [q.strip().strip("'") for q in clean_text.split(",") if q.strip()]
+    except (ValueError, SyntaxError) as e:
+        self.logger.warning(f"Fallback to line splitting for output parsing. Error: {str(e)}")
+        # Remove any surrounding brackets and quotes, and trailing '\']"' characters
+        clean_text = re.sub(r"^\[?'?\[?|'?\]?\]?$|\\'\]\"$", "", output_text)
+        output_queries = [q.strip().strip("'").strip('"') for q in clean_text.split(",") if q.strip()]
 
-            if not output_queries:
-                raise ValueError("No valid queries found after fallback parsing")
+        if not output_queries:
+            raise ValueError("No valid queries found after fallback parsing")
 
-            return output_queries
+        return output_queries
