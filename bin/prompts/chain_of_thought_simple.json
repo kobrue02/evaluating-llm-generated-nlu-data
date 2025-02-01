@@ -14,7 +14,7 @@
             "Next, I'll create variations in phrasing: direct commands, polite requests, and casual phrases.",
             "Finally, I'll ensure linguistic diversity by using synonyms and varying sentence structures.",
             "Here are the queries:",
-            "[\"Mach die Klimaanlage an\", \"AC anmachen\", \"Klimaanlage an\", \"Kannst du die Klima anmachen\", \"Klimaanlage einschalten bitte\"]"
+            "['Mach die Klimaanlage an', 'AC anmachen', 'Klimaanlage an', 'Kannst du die Klima anmachen', 'Klimaanlage einschalten bitte']"
         ]
     },
     {
@@ -28,7 +28,7 @@
             "Next, I'll think of diverse ways users might phrase this, including commands and polite forms.",
             "Lastly, I'll ensure variety by rephrasing and using synonyms for 'turn off' and 'music'.",
             "Here are the queries:",
-            "[\"Musik aus\", \"Mach die Musik aus\", \"Schalt die Musik ab\", \"Kannst du die Musik ausmachen\", \"Mach Musik aus jetzt\"]"
+            "['Musik aus', 'Mach die Musik aus', 'Schalt die Musik ab', 'Kannst du die Musik ausmachen', 'Mach Musik aus jetzt']"
         ]
     },
     {
@@ -42,7 +42,7 @@
             "I'll vary the phrasing to include commands, informal language, and polite requests.",
             "Additionally, I'll explore synonyms for 'activate' and 'massage' to ensure linguistic diversity.",
             "Here are the queries:",
-            "[\"Sitzmassage anmachen\", \"Gib mir eine Massage\", \"Massier mich\", \"Kannst du die Massage einschalten\", \"Sitz Massage einschalten\", \"Aktivier die Massage\", \"Massage starten\", \"Schalte die Sitzmassage ein\", \"Ich will eine Massage\", \"Ich brauche eine Massage\"]"
+            "['Sitzmassage anmachen', 'Gib mir eine Massage', 'Massier mich', 'Kannst du die Massage einschalten', 'Sitz Massage einschalten', 'Aktivier die Massage', 'Massage starten', 'Schalte die Sitzmassage ein', 'Ich will eine Massage', 'Ich brauche eine Massage']"
         ]
     },
     {
