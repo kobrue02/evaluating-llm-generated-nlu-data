@@ -29,7 +29,6 @@ class Framework:
 
         if metrics is None:
             self.metrics = [
-                Metric.PERPLEXITY,
                 Metric.DISTINCT_1,
                 Metric.DISTINCT_2,
                 Metric.TTR,
@@ -66,7 +65,6 @@ class Framework:
         results = defaultdict(float)
         for metric in self.metrics:
             if metric in [
-                Metric.PERPLEXITY,
                 Metric.DISTINCT_1,
                 Metric.DISTINCT_2,
                 Metric.TTR,
@@ -95,9 +93,7 @@ class Framework:
     def _compute_metric(self, metric: Metric, data: List[str], results: dict, hypotheses: Optional[List[str]] = None):
         """Compute a single metric and log the result."""
         metric_name = metric.name.lower()
-        if metric == Metric.PERPLEXITY:
-            results[metric_name] = round(calculate_perplexity(data, model=self.g_model, tokenizer=self.g_tokenizer), 3)
-        elif metric == Metric.DISTINCT_1:
+        if metric == Metric.DISTINCT_1:
             results[metric_name] = round(distinct_n(data, 1), 3)
         elif metric == Metric.DISTINCT_2:
             results[metric_name] = round(distinct_n(data, 2), 3)

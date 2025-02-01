@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class Metric(Enum):
-    PERPLEXITY = "perplexity"
     DISTINCT_1 = "distinct_1"
     DISTINCT_2 = "distinct_2"
     TTR = "ttr"
@@ -51,34 +50,6 @@ def _calculate_ngrams(text: str, n: int) -> list:
     """Calculate n-grams for a given text."""
     tokens = text.split()
     return list(ngrams(tokens, n))
-
-
-def calculate_perplexity(
-    text: str | list, model=None, tokenizer=None, base=2, max_perplexity=10000
-) -> float:
-    """
-    Calculate the perplexity of a given text using BERT's masked language modeling.
-
-    Args:
-        text (str | list): The text to calculate the perplexity of.
-        model (transformers.PreTrainedModel): The BERT model. By default, uses bert-base-uncased.
-        tokenizer (transformers.PreTrainedTokenizer): The tokenizer. By default, uses bert-base-uncased.
-
-    Returns:
-        float: The perplexity of the text.
-    """
-    text = _validate_text_input(text)
-    scores = []
-    for t in text:
-        if not t:
-            return 0.0
-        inputs = tokenizer(t, return_tensors="pt", padding=True, truncation=True)
-        with torch.no_grad():
-            outputs = model(**inputs, labels=inputs["input_ids"])
-        loss = outputs.loss
-        perplexity = math.exp(loss.item())
-        scores.append(1 - (math.log(perplexity, base) / math.log(max_perplexity, base)))
-    return np.mean(scores)
 
 
 def distinct_n(text: str | list, n: int) -> float:
@@ -245,12 +216,12 @@ def extract_entities(sentence: str) -> list[tuple]:
     """Extract entities and their syntactic roles from a sentence."""
     entities = []
     words = nltk.word_tokenize(sentence)
-    tagger = nltk.pos_tag(words)
-    for word in sentence.split():
-        # identify subject
-        if "NN" in tagger[word]:
+    tagger = nltk.pos_tag(words)  # List of (word, POS) tuples
+    
+    for word, pos in tagger:  # Iterate over (word, POS) pairs
+        if "NN" in pos:  # Check if POS tag contains 'NN' (noun)
             entities.append((word, "S"))
-            
+    
     return entities
 
 
