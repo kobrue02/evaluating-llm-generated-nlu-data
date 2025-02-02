@@ -86,13 +86,9 @@ def type_token_ratio(text: str | list) -> float:
     text = _validate_text_input(text)
     if not text:
         return 0.0
-    ttrs = []
-    for t in text:
-        tokens = t.split()
-        types = set([cistem.stem(token) for token in tokens])
-        ttr = len(types) / len(tokens)
-        ttrs.append(ttr)
-    return np.mean(ttrs)
+    tokens = " ".join(text).split()
+    types = set([cistem.stem(token) for token in tokens])
+    return len(types) / len(tokens)
 
 
 def moving_average_ttr(text: str | list, window_size: int = 100) -> float:
@@ -107,16 +103,14 @@ def moving_average_ttr(text: str | list, window_size: int = 100) -> float:
         float: The moving average type-token ratio of the text.
     """
     text = _validate_text_input(text)
+    tokens = " ".join(text).split()
     ttrs = []
-    for t in text:
-        tokens = t.split()
-        for i in range(len(tokens) - window_size):
-            window = tokens[i : i + window_size]
-            window_types = set([cistem.stem(token) for token in window])
-            ttr = len(window_types) / len(window)
-            if not math.isnan(ttr):
-                ttrs.append(ttr)
-    return np.mean(ttrs) if ttrs else 0.0
+    for i in range(len(tokens) - window_size):
+        window = tokens[i : i + window_size]
+        types = set([cistem.stem(token) for token in window])
+        ttr = len(types) / len(window)
+        ttrs.append(ttr)
+    return np.mean(ttrs)
 
 
 def average_n_of_tokens(text: str | list) -> float:

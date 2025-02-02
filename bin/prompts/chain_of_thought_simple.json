@@ -47,6 +47,6 @@
     },
     {
         "role": "user",
-        "content": "Now generate {num_samples} queries for the intent {intent}."
+        "content": "Now generate {num_samples} queries for the intent {intent}. Here are some examples: {examples}"
     }
 ]
