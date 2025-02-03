@@ -81,6 +81,13 @@ class IntentClassifier:
         y_test = test_df["intent"]
         y_pred = self.model.predict(X_test)
         return classification_report(y_test, y_pred)
+    
+    def reset(self):
+        """
+        Resets the model.
+        """
+        self.vectorizer = TfidfVectorizer()
+        self.model = MultinomialNB()
 
 
 if __name__ == "__main__":
