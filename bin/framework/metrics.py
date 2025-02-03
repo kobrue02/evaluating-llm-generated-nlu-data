@@ -310,17 +310,11 @@ def pos_tag_n_grams_diversity(hypotheses: list[str]) -> float:
     if not hypotheses:
         return 0.0
     for hypothesis in hypotheses:
-        n_grams = n_grams_of_pos_tags(hypothesis, 2)
+        pos_tags = get_pos_tags(hypothesis)
+        n_grams = ngrams(pos_tags, 3)
         diversity = len(set(n_grams)) / len(n_grams)
         scores.append(diversity)
     return np.mean(scores)
-
-
-def n_grams_of_pos_tags(text: str, n: int) -> list:
-    """Calculate n-grams of POS tags for a given text."""
-    pos_tags = get_pos_tags(text)
-    return list(ngrams(pos_tags, n))
-
 
 def get_pos_tags(text: str) -> list:
     """Get POS tags for a given text."""

@@ -91,36 +91,35 @@ class Framework:
     ):
         """Compute a single metric and log the result."""
         metric_name = metric.name.lower()
-        if metric == Metric.DISTINCT_1:
-            results[metric_name] = round(distinct_n(data, 1), 3)
-        elif metric == Metric.DISTINCT_2:
-            results[metric_name] = round(distinct_n(data, 2), 3)
-        elif metric == Metric.TTR:
-            results[metric_name] = round(type_token_ratio(data), 3)
-        elif metric == Metric.MOVING_AVERAGE_TTR:
-            results[metric_name] = round(moving_average_ttr(data), 3)
-        elif metric == Metric.AVERAGE_N_OF_TOKENS:
-            results[metric_name] = round(average_n_of_tokens(data), 3)
-        elif metric == Metric.AVERAGE_N_OF_CHARACTERS:
-            results[metric_name] = round(average_n_of_characters(data), 3)
-        elif metric == Metric.DISTANCE_TO_CENTROID:
-            results[metric_name] = round(
-                distance_to_centroid(data, model=self.model), 3
-            )
-        elif metric == Metric.DISCOURSE_COHERENCE:
-            results[metric_name] = round(discourse_coherence(data), 3)
-        elif metric == Metric.INTER_SENTENCE_SIMILARITY:
-            results[metric_name] = round(
-                inter_sentence_similarity(data, model=self.model), 3
-            )
-        elif metric == Metric.BLEU:
-            results[metric_name] = round(bleu_score(hypotheses, data), 3)
-        elif metric == Metric.MEAN_LEVENSHTEIN_DISTANCE:
-            results[metric_name] = round(mean_levenshtein_distance(data, hypotheses), 3)
-        elif metric == Metric.POS_TAG_N_GRAMS_DIVERSITY:
-            results[metric_name] = round(
-                pos_tag_n_grams_diversity(hypotheses), 3
-            )
+        match metric:
+            case Metric.DISTINCT_1:
+                results[metric_name] = round(distinct_n(data, 1), 3)
+            case Metric.DISTINCT_2:
+                results[metric_name] = round(distinct_n(data, 2), 3)
+            case Metric.TTR:
+                results[metric_name] = round(type_token_ratio(data), 3)
+            case Metric.MOVING_AVERAGE_TTR:
+                results[metric_name] = round(moving_average_ttr(data), 3)
+            case Metric.AVERAGE_N_OF_TOKENS:
+                results[metric_name] = round(average_n_of_tokens(data), 3)
+            case Metric.AVERAGE_N_OF_CHARACTERS:
+                results[metric_name] = round(average_n_of_characters(data), 3)
+            case Metric.DISTANCE_TO_CENTROID:
+                results[metric_name] = round(
+                    distance_to_centroid(data, model=self.model), 3
+                )
+            case Metric.DISCOURSE_COHERENCE:
+                results[metric_name] = round(discourse_coherence(data), 3)
+            case Metric.INTER_SENTENCE_SIMILARITY:
+                results[metric_name] = round(
+                    inter_sentence_similarity(data, model=self.model), 3
+                )
+            case Metric.BLEU:
+                results[metric_name] = round(bleu_score(hypotheses, data), 3)
+            case Metric.MEAN_LEVENSHTEIN_DISTANCE:
+                results[metric_name] = round(mean_levenshtein_distance(data, hypotheses), 3)
+            case Metric.POS_TAG_N_GRAMS_DIVERSITY:
+                results[metric_name] = round(pos_tag_n_grams_diversity(hypotheses), 3)
         self.logger.info(f"{metric_name}: {results[metric_name]}")
 
     def __apply_framework(
