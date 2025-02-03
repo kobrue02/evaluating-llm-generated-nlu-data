@@ -37,11 +37,11 @@ class Framework:
             Metric.DISTANCE_TO_CENTROID,
             Metric.DISCOURSE_COHERENCE,
             Metric.INTER_SENTENCE_SIMILARITY,
+            Metric.POS_TAG_N_GRAMS_DIVERSITY,
         ]
         self.comparison_metrics = [
             Metric.BLEU,
             Metric.MEAN_LEVENSHTEIN_DISTANCE,
-            Metric.POS_TAG_N_GRAMS_DIVERSITY,
         ]
 
         if metrics is None:
@@ -68,17 +68,7 @@ class Framework:
         """Compute metrics for a list of hypotheses."""
         results = defaultdict(float)
         for metric in self.metrics:
-            if metric in [
-                Metric.DISTINCT_1,
-                Metric.DISTINCT_2,
-                Metric.TTR,
-                Metric.MOVING_AVERAGE_TTR,
-                Metric.AVERAGE_N_OF_TOKENS,
-                Metric.AVERAGE_N_OF_CHARACTERS,
-                Metric.DISTANCE_TO_CENTROID,
-                Metric.DISCOURSE_COHERENCE,
-                Metric.INTER_SENTENCE_SIMILARITY,
-            ]:
+            if metric in self.hypotheses_metrics:
                 self._compute_metric(metric, hypotheses, results)
         return dict(results)
 
@@ -88,11 +78,7 @@ class Framework:
         """Compute metrics for a list of references and hypotheses."""
         results = defaultdict(float)
         for metric in self.metrics:
-            if metric in [
-                Metric.BLEU,
-                Metric.MEAN_LEVENSHTEIN_DISTANCE,
-                Metric.POS_TAG_N_GRAMS_DIVERSITY,
-            ]:
+            if metric in self.comparison_metrics:
                 self._compute_metric(metric, references, results, hypotheses)
         return dict(results)
 
