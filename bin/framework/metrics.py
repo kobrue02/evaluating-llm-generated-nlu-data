@@ -91,7 +91,7 @@ def type_token_ratio(text: str | list) -> float:
     return len(types) / len(tokens)
 
 
-def moving_average_ttr(text: str | list, window_size: int = 100) -> float:
+def moving_average_ttr(text: str | list, window_size: int = 10) -> float:
     """
     Calculate the moving average type-token ratio of a given text using the Cistem stemmer.
 
@@ -183,7 +183,9 @@ def inter_sentence_similarity(sentences: list[str], model=None) -> float:
     """
     sentences = _validate_text_input(sentences)
     if not sentences or len(sentences) < 2:
-        logger.warning("At least two sentences are required for inter-sentence similarity.")
+        logger.warning(
+            "At least two sentences are required for inter-sentence similarity."
+        )
         return 0.0
 
     embeddings = _calculate_embeddings(sentences, model)
@@ -194,7 +196,9 @@ def inter_sentence_similarity(sentences: list[str], model=None) -> float:
     num_comparisons = n * (n - 1)
 
     inter_sentence_similarity = sum_of_similarities / num_comparisons
-    return inter_sentence_similarity if not math.isnan(inter_sentence_similarity) else 0.0
+    return (
+        inter_sentence_similarity if not math.isnan(inter_sentence_similarity) else 0.0
+    )
 
 
 def _calculate_entity_grid(sentences: list[str]) -> defaultdict:
@@ -211,11 +215,11 @@ def extract_entities(sentence: str) -> list[tuple]:
     entities = []
     words = nltk.word_tokenize(sentence)
     tagger = nltk.pos_tag(words)  # List of (word, POS) tuples
-    
+
     for word, pos in tagger:  # Iterate over (word, POS) pairs
         if "NN" in pos:  # Check if POS tag contains 'NN' (noun)
             entities.append((word, "S"))
-    
+
     return entities
 
 
@@ -261,13 +265,18 @@ def _calculate_clusters(embeddings: np.ndarray, n_clusters: int = 5) -> np.ndarr
     return kmeans.cluster_centers_
 
 
-def similarity_by_clustering(references: list[str], hypotheses: list[str], model) -> float:
+def similarity_by_clustering(
+    references: list[str], hypotheses: list[str], model
+) -> float:
     """Calculate the similarity of hypotheses to reference clusters."""
     reference_embeddings = _calculate_embeddings(references, model)
     reference_centroids = _calculate_clusters(reference_embeddings)
 
     hypothesis_embeddings = _calculate_embeddings(hypotheses, model)
-    similarities = [max(cosine_similarity([h], reference_centroids)[0]) for h in hypothesis_embeddings]
+    similarities = [
+        max(cosine_similarity([h], reference_centroids)[0])
+        for h in hypothesis_embeddings
+    ]
     return np.mean(similarities)
 
 
@@ -295,7 +304,9 @@ def mean_levenshtein_distance(references: list[str], hypotheses: list[str]) -> f
     return np.mean(distances)
 
 
-def pos_tag_n_grams_diversity(references: list[str], hypotheses: list[str], n: int) -> float:
+def pos_tag_n_grams_diversity(
+    references: list[str], hypotheses: list[str], n: int
+) -> float:
     """Calculate the diversity of n-grams of POS tags in hypotheses with respect to references."""
     reference_n_grams = set()
     for sample in references:
@@ -306,7 +317,9 @@ def pos_tag_n_grams_diversity(references: list[str], hypotheses: list[str], n: i
         hypothesis_n_grams.update(n_grams_of_pos_tags(sample, n))
 
     try:
-        diversity = len(hypothesis_n_grams.difference(reference_n_grams)) / len(hypothesis_n_grams)
+        diversity = len(hypothesis_n_grams.difference(reference_n_grams)) / len(
+            hypothesis_n_grams
+        )
     except ZeroDivisionError:
         diversity = 0.0
     return diversity

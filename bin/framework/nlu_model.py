@@ -6,6 +6,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
 from collections import Counter
 
+
 class IntentClassifier:
     def __init__(self):
         self.vectorizer = TfidfVectorizer()
@@ -26,7 +27,7 @@ class IntentClassifier:
         train_dfs = []
 
         df = df.dropna()
-        for intent, group in df.groupby('intent'):
+        for intent, group in df.groupby("intent"):
             if len(group) >= 5:
                 test_samples = group.sample(5, random_state=42)
                 train_samples = group.drop(test_samples.index)
@@ -49,8 +50,8 @@ class IntentClassifier:
         Args:
             train_df (pd.DataFrame): Training data with columns 'query' and 'intent'.
         """
-        X_train = self.vectorizer.fit_transform(train_df['query'])
-        y_train = train_df['intent']
+        X_train = self.vectorizer.fit_transform(train_df["query"])
+        y_train = train_df["intent"]
         self.model.fit(X_train, y_train)
 
     def predict(self, texts):
@@ -76,13 +77,14 @@ class IntentClassifier:
         Returns:
             str: Classification report.
         """
-        X_test = self.vectorizer.transform(test_df['query'])
-        y_test = test_df['intent']
+        X_test = self.vectorizer.transform(test_df["query"])
+        y_test = test_df["intent"]
         y_pred = self.model.predict(X_test)
         return classification_report(y_test, y_pred)
 
-if __name__ == '__main__':
-    df = pd.read_csv('output/zero_shot_simple_data.csv')
+
+if __name__ == "__main__":
+    df = pd.read_csv("output/zero_shot_simple_data.csv")
     model = IntentClassifier()
     train_df, test_df = model.split_dataset(df)
     model.fit(train_df)

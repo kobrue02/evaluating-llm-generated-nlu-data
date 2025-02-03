@@ -27,21 +27,25 @@ class Framework:
         self._initialize_models()
         self._initialize_logger()
 
+        self.hypotheses_metrics = [
+            Metric.DISTINCT_1,
+            Metric.DISTINCT_2,
+            Metric.TTR,
+            Metric.MOVING_AVERAGE_TTR,
+            Metric.AVERAGE_N_OF_TOKENS,
+            Metric.AVERAGE_N_OF_CHARACTERS,
+            Metric.DISTANCE_TO_CENTROID,
+            Metric.DISCOURSE_COHERENCE,
+            Metric.INTER_SENTENCE_SIMILARITY,
+        ]
+        self.comparison_metrics = [
+            Metric.BLEU,
+            Metric.MEAN_LEVENSHTEIN_DISTANCE,
+            Metric.POS_TAG_N_GRAMS_DIVERSITY,
+        ]
+
         if metrics is None:
-            self.metrics = [
-                Metric.DISTINCT_1,
-                Metric.DISTINCT_2,
-                Metric.TTR,
-                Metric.MOVING_AVERAGE_TTR,
-                Metric.AVERAGE_N_OF_TOKENS,
-                Metric.AVERAGE_N_OF_CHARACTERS,
-                Metric.DISTANCE_TO_CENTROID,
-                Metric.DISCOURSE_COHERENCE,
-                Metric.INTER_SENTENCE_SIMILARITY,
-                Metric.BLEU,
-                Metric.MEAN_LEVENSHTEIN_DISTANCE,
-                Metric.POS_TAG_N_GRAMS_DIVERSITY,
-            ]
+            self.metrics = self.hypotheses_metrics + self.comparison_metrics
         else:
             self.metrics = metrics
 
@@ -78,7 +82,9 @@ class Framework:
                 self._compute_metric(metric, hypotheses, results)
         return dict(results)
 
-    def compute_comparison_metrics(self, references: List[str], hypotheses: List[str]) -> dict:
+    def compute_comparison_metrics(
+        self, references: List[str], hypotheses: List[str]
+    ) -> dict:
         """Compute metrics for a list of references and hypotheses."""
         results = defaultdict(float)
         for metric in self.metrics:
@@ -90,7 +96,13 @@ class Framework:
                 self._compute_metric(metric, references, results, hypotheses)
         return dict(results)
 
-    def _compute_metric(self, metric: Metric, data: List[str], results: dict, hypotheses: Optional[List[str]] = None):
+    def _compute_metric(
+        self,
+        metric: Metric,
+        data: List[str],
+        results: dict,
+        hypotheses: Optional[List[str]] = None,
+    ):
         """Compute a single metric and log the result."""
         metric_name = metric.name.lower()
         if metric == Metric.DISTINCT_1:
@@ -106,20 +118,30 @@ class Framework:
         elif metric == Metric.AVERAGE_N_OF_CHARACTERS:
             results[metric_name] = round(average_n_of_characters(data), 3)
         elif metric == Metric.DISTANCE_TO_CENTROID:
-            results[metric_name] = round(distance_to_centroid(data, model=self.model), 3)
+            results[metric_name] = round(
+                distance_to_centroid(data, model=self.model), 3
+            )
         elif metric == Metric.DISCOURSE_COHERENCE:
             results[metric_name] = round(discourse_coherence(data), 3)
         elif metric == Metric.INTER_SENTENCE_SIMILARITY:
-            results[metric_name] = round(inter_sentence_similarity(data, model=self.model), 3)
+            results[metric_name] = round(
+                inter_sentence_similarity(data, model=self.model), 3
+            )
         elif metric == Metric.BLEU:
             results[metric_name] = round(bleu_score(hypotheses, data), 3)
         elif metric == Metric.MEAN_LEVENSHTEIN_DISTANCE:
             results[metric_name] = round(mean_levenshtein_distance(data, hypotheses), 3)
         elif metric == Metric.POS_TAG_N_GRAMS_DIVERSITY:
-            results[metric_name] = round(pos_tag_n_grams_diversity(data, hypotheses, 2), 3)
+            results[metric_name] = round(
+                pos_tag_n_grams_diversity(data, hypotheses, 2), 3
+            )
         self.logger.info(f"{metric_name}: {results[metric_name]}")
 
-    def __apply_framework(self, references: Optional[List[str]] = None, hypotheses: Optional[List[str]] = None) -> dict:
+    def __apply_framework(
+        self,
+        references: Optional[List[str]] = None,
+        hypotheses: Optional[List[str]] = None,
+    ) -> dict:
         """
         Apply the framework to a text generation model.
         Returns:
@@ -148,7 +170,9 @@ class Framework:
             results.append(result)
         return results
 
-    def apply_framework_to_datasets(self, dataset_a: pd.DataFrame, dataset_b: Optional[pd.DataFrame] = None) -> List[dict]:
+    def apply_framework_to_datasets(
+        self, dataset_a: pd.DataFrame, dataset_b: Optional[pd.DataFrame] = None
+    ) -> List[dict]:
         """
         Apply the framework to a text generation model.
         Returns:
@@ -161,10 +185,16 @@ class Framework:
         for intent in tqdm(intents):
             self.logger.info(f"Evaluating intent: {intent}")
             hypotheses = dataset_a[dataset_a.intent == intent].text.tolist()
-            references = dataset_b[dataset_b.intent == intent].text.tolist() if dataset_b is not None else None
+            references = (
+                dataset_b[dataset_b.intent == intent].text.tolist()
+                if dataset_b is not None
+                else None
+            )
 
             if not hypotheses:
-                self.logger.warning(f"No data found for intent {intent}. Skipping evaluation.")
+                self.logger.warning(
+                    f"No data found for intent {intent}. Skipping evaluation."
+                )
                 continue
 
             result = self.__apply_framework(references, hypotheses)

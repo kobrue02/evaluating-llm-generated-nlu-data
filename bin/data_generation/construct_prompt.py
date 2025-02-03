@@ -12,10 +12,10 @@ import json
 def extract_variable_names(template: str) -> List[str]:
     """
     Extract variable names from a template.
-    
+
     Args:
         template (str): The template.
-    
+
     Returns:
         List[str]: The variable names.
     """
@@ -32,11 +32,14 @@ class Prompt:
     """
 
     def __init__(
-        self, prompt: List[Dict], intent: Optional[str] = None, examples: Optional[List[str]] = None
+        self,
+        prompt: List[Dict],
+        intent: Optional[str] = None,
+        examples: Optional[List[str]] = None,
     ):
         """
         Initialize a prompt.
-        
+
         Args:
             prompt (List[Dict]): The prompt.
             intent (str): The intent of the prompt.
@@ -61,10 +64,10 @@ class Prompt:
 def _load_prompt_from_file(path: str) -> Optional[List[Dict]]:
     """
     Helper function to load a prompt from a file.
-    
+
     Args:
         path (str): The path to the file.
-    
+
     Returns:
         Optional[List[Dict]]: The loaded prompt or None if the file is not found.
     """
@@ -78,11 +81,11 @@ def _load_prompt_from_file(path: str) -> Optional[List[Dict]]:
 def _format_prompt_message(message: Dict, **kwargs) -> Dict:
     """
     Helper function to format a prompt message.
-    
+
     Args:
         message (Dict): The message to format.
         **kwargs: Variables to format the message with.
-    
+
     Returns:
         Dict: The formatted message.
     """
@@ -95,21 +98,25 @@ def _format_prompt_message(message: Dict, **kwargs) -> Dict:
     return message
 
 
-def _append_generated_queries(prompt: List[Dict], generated_queries: List[str]) -> List[Dict]:
+def _append_generated_queries(
+    prompt: List[Dict], generated_queries: List[str]
+) -> List[Dict]:
     """
     Helper function to append generated queries to the prompt.
-    
+
     Args:
         prompt (List[Dict]): The prompt to append to.
         generated_queries (List[str]): The generated queries to append.
-    
+
     Returns:
         List[Dict]: The updated prompt.
     """
     if generated_queries:
         if prompt[-1]["role"] == "user":
             if isinstance(prompt[-1]["content"], tuple):
-                prompt[-1]["content"] = prompt[-1]["content"][0]  # Take the first element if it's a tuple
+                prompt[-1]["content"] = prompt[-1]["content"][
+                    0
+                ]  # Take the first element if it's a tuple
             prompt[-1]["content"] = str(prompt[-1]["content"])  # Ensure it's a string
             prompt[-1]["content"] += "\n\nPreviously generated queries:\n" + "\n".join(
                 map(str, generated_queries)
@@ -133,12 +140,12 @@ def load_prompt(
 ) -> Prompt:
     """
     Load a prompt from a file.
-    
+
     Args:
         path (str): The path to the file.
         id (int): The ID of the prompt to load.
         generated_queries (List[str]): Previously generated queries to append to the prompt.
-    
+
     Returns:
         Prompt: The loaded prompt.
     """
@@ -154,8 +161,7 @@ def load_prompt(
 
     if isinstance(prompt, str):
         return Prompt(
-            [{"role": "user", "content": prompt}],
-            intent=kwargs.get("intent")
+            [{"role": "user", "content": prompt}], intent=kwargs.get("intent")
         )
     else:
         prompt = [_format_prompt_message(message, **kwargs) for message in prompt]
@@ -168,9 +174,9 @@ def load_prompt(
 
 if __name__ == "__main__":
     prompt = load_prompt(
-        path="bin/prompts/chain_of_thought_simple.json", 
-        intent="ac_on", 
-        num_samples=10, 
-        examples=["example1", "example2"]
+        path="bin/prompts/chain_of_thought_simple.json",
+        intent="ac_on",
+        num_samples=10,
+        examples=["example1", "example2"],
     )
     print(prompt)

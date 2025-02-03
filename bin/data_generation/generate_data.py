@@ -110,7 +110,9 @@ class DataGenerationModel:
 
         for intent in tqdm(intents, desc="Processing intents"):
             self.logger.info(f"Generating data for intent: {intent}")
-            synthetic_data += self._process_intent(prompt_id, intent, samples_per_intent)
+            synthetic_data += self._process_intent(
+                prompt_id, intent, samples_per_intent
+            )
 
         self._validate_dataset(synthetic_data)
         return synthetic_data
@@ -176,9 +178,7 @@ class DataGenerationModel:
                 self.logger.error(f"Unexpected error for {intent}: {e}")
                 continue
 
-        return DataSet(
-            data=generated_queries, labels=[intent] * len(generated_queries)
-        )
+        return DataSet(data=generated_queries, labels=[intent] * len(generated_queries))
 
     def _generate_batch_data(self, prompt: Prompt, intent: str) -> List[str]:
         """Generate and validate batch data for a prompt."""
@@ -189,7 +189,9 @@ class DataGenerationModel:
 
     def _get_examples_from_reference(self, intent: str, prompt_id: str) -> List[str]:
         """Retrieve examples from the reference dataset."""
-        examples = self.reference_dataset[self.reference_dataset.intent == intent].text.tolist()
+        examples = self.reference_dataset[
+            self.reference_dataset.intent == intent
+        ].text.tolist()
         if prompt_id == "few_shot_simple":
             return examples[:3]
         elif prompt_id == "one_shot_simple":
@@ -221,11 +223,15 @@ class DataGenerationModel:
             start = output_text.find("[")
             end = output_text.rfind("]")
             if start != -1 and end != -1:
-                output_text = output_text[start:end+1]
+                output_text = output_text[start : end + 1]
 
             # Remove unwanted characters (e.g., backslashes, quotes, brackets)
-            output_text = re.sub(r"\\'", "'", output_text)  # Replace escaped single quotes
-            output_text = re.sub(r"\\\"", "\"", output_text)  # Replace escaped double quotes
+            output_text = re.sub(
+                r"\\'", "'", output_text
+            )  # Replace escaped single quotes
+            output_text = re.sub(
+                r"\\\"", '"', output_text
+            )  # Replace escaped double quotes
 
             # Try to parse as a Python literal
             output_queries = ast.literal_eval(output_text)
@@ -240,10 +246,16 @@ class DataGenerationModel:
             return output_queries
 
         except (ValueError, SyntaxError) as e:
-            self.logger.warning(f"Fallback to line splitting for output parsing. Error: {str(e)}")
+            self.logger.warning(
+                f"Fallback to line splitting for output parsing. Error: {str(e)}"
+            )
             # Remove any surrounding brackets and quotes, and trailing '\']"' characters
             clean_text = re.sub(r"^\[?'?\[?|'?\]?\]?$|\\'\]\"$", "", output_text)
-            output_queries = [q.strip().strip("'").strip('"') for q in clean_text.split(",") if q.strip()]
+            output_queries = [
+                q.strip().strip("'").strip('"')
+                for q in clean_text.split(",")
+                if q.strip()
+            ]
 
             if not output_queries:
                 raise ValueError("No valid queries found after fallback parsing")
