@@ -307,6 +307,8 @@ def mean_levenshtein_distance(references: list[str], hypotheses: list[str]) -> f
 def pos_tag_n_grams_diversity(hypotheses: list[str]) -> float:
     """Calculate the diversity of POS tag n-grams in a list of hypotheses."""
     scores = []
+    if not hypotheses:
+        return 0.0
     for hypothesis in hypotheses:
         n_grams = n_grams_of_pos_tags(hypothesis, 2)
         diversity = len(set(n_grams)) / len(n_grams)
