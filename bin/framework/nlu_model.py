@@ -48,9 +48,9 @@ class IntentClassifier:
         Fits the classifier on the training data.
 
         Args:
-            train_df (pd.DataFrame): Training data with columns 'query' and 'intent'.
+            train_df (pd.DataFrame): Training data with columns 'text' and 'intent'.
         """
-        X_train = self.vectorizer.fit_transform(train_df["query"])
+        X_train = self.vectorizer.fit_transform(train_df["text"])
         y_train = train_df["intent"]
         self.model.fit(X_train, y_train)
 
@@ -72,12 +72,12 @@ class IntentClassifier:
         Evaluates the model on the test data.
 
         Args:
-            test_df (pd.DataFrame): Test data with columns 'query' and 'intent'.
+            test_df (pd.DataFrame): Test data with columns 'text' and 'intent'.
 
         Returns:
             str: Classification report.
         """
-        X_test = self.vectorizer.transform(test_df["query"])
+        X_test = self.vectorizer.transform(test_df["text"])
         y_test = test_df["intent"]
         y_pred = self.model.predict(X_test)
         return classification_report(y_test, y_pred)
