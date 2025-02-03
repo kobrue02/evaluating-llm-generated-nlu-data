@@ -304,25 +304,15 @@ def mean_levenshtein_distance(references: list[str], hypotheses: list[str]) -> f
     return np.mean(distances)
 
 
-def pos_tag_n_grams_diversity(
-    references: list[str], hypotheses: list[str], n: int
-) -> float:
-    """Calculate the diversity of n-grams of POS tags in hypotheses with respect to references."""
-    reference_n_grams = set()
-    for sample in references:
-        reference_n_grams.update(n_grams_of_pos_tags(sample, n))
+def pos_tag_n_grams_diversity(hypotheses: list[str]) -> float:
+    """Calculate the diversity of POS tag n-grams in a list of hypotheses."""
+    scores = []
+    for hypothesis in hypotheses:
+        n_grams = n_grams_of_pos_tags(hypothesis, 2)
+        diversity = len(set(n_grams)) / len(n_grams)
+        scores.append(diversity)
+    return np.mean(scores)
 
-    hypothesis_n_grams = set()
-    for sample in hypotheses:
-        hypothesis_n_grams.update(n_grams_of_pos_tags(sample, n))
-
-    try:
-        diversity = len(hypothesis_n_grams.difference(reference_n_grams)) / len(
-            hypothesis_n_grams
-        )
-    except ZeroDivisionError:
-        diversity = 0.0
-    return diversity
 
 
 def n_grams_of_pos_tags(text: str, n: int) -> list:
