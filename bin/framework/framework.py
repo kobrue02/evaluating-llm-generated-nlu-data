@@ -79,45 +79,45 @@ class Framework:
         results = defaultdict(float)
         for metric in self.metrics:
             if metric in self.comparison_metrics:
-                self._compute_metric(metric, references, results, hypotheses)
+                self._compute_metric(metric, hypotheses, results, references)
         return dict(results)
 
     def _compute_metric(
         self,
         metric: Metric,
-        data: List[str],
+        hypotheses: List[str],
         results: dict,
-        hypotheses: Optional[List[str]] = None,
+        references: Optional[List[str]] = None,
     ):
         """Compute a single metric and log the result."""
         metric_name = metric.name.lower()
         match metric:
             case Metric.DISTINCT_1:
-                results[metric_name] = round(distinct_n(data, 1), 3)
+                results[metric_name] = round(distinct_n(hypotheses, 1), 3)
             case Metric.DISTINCT_2:
-                results[metric_name] = round(distinct_n(data, 2), 3)
+                results[metric_name] = round(distinct_n(hypotheses, 2), 3)
             case Metric.TTR:
-                results[metric_name] = round(type_token_ratio(data), 3)
+                results[metric_name] = round(type_token_ratio(hypotheses), 3)
             case Metric.MOVING_AVERAGE_TTR:
-                results[metric_name] = round(moving_average_ttr(data), 3)
+                results[metric_name] = round(moving_average_ttr(hypotheses), 3)
             case Metric.AVERAGE_N_OF_TOKENS:
-                results[metric_name] = round(average_n_of_tokens(data), 3)
+                results[metric_name] = round(average_n_of_tokens(hypotheses), 3)
             case Metric.AVERAGE_N_OF_CHARACTERS:
-                results[metric_name] = round(average_n_of_characters(data), 3)
+                results[metric_name] = round(average_n_of_characters(hypotheses), 3)
             case Metric.DISTANCE_TO_CENTROID:
                 results[metric_name] = round(
-                    distance_to_centroid(data, model=self.model), 3
+                    distance_to_centroid(hypotheses, model=self.model), 3
                 )
             case Metric.DISCOURSE_COHERENCE:
-                results[metric_name] = round(discourse_coherence(data), 3)
+                results[metric_name] = round(discourse_coherence(hypotheses), 3)
             case Metric.INTER_SENTENCE_SIMILARITY:
                 results[metric_name] = round(
-                    inter_sentence_similarity(data, model=self.model), 3
+                    inter_sentence_similarity(hypotheses, model=self.model), 3
                 )
             case Metric.BLEU:
-                results[metric_name] = round(bleu_score(hypotheses, data), 3)
+                results[metric_name] = round(bleu_score(hypotheses, references), 3)
             case Metric.MEAN_LEVENSHTEIN_DISTANCE:
-                results[metric_name] = round(mean_levenshtein_distance(data, hypotheses), 3)
+                results[metric_name] = round(mean_levenshtein_distance(hypotheses, references), 3)
             case Metric.POS_TAG_N_GRAMS_DIVERSITY:
                 results[metric_name] = round(pos_tag_n_grams_diversity(hypotheses), 3)
         self.logger.info(f"{metric_name}: {results[metric_name]}")
@@ -133,8 +133,9 @@ class Framework:
             dict: The results of the evaluation.
         """
         results = {}
-        self.logger.info("Computing metrics for hypotheses.")
-        results.update(self.compute_hypotheses_metrics(hypotheses))
+        if hypotheses:
+            self.logger.info("Computing metrics for hypotheses.")
+            results.update(self.compute_hypotheses_metrics(hypotheses))
         if references:
             self.logger.info("Computing comparison metrics.")
             results.update(self.compute_comparison_metrics(references, hypotheses))
@@ -182,7 +183,7 @@ class Framework:
                 )
                 continue
 
-            result = self.__apply_framework(references, hypotheses)
+            result = self.__apply_framework(references=references, hypotheses=hypotheses)
             results.append({intent: result})
 
         return results
