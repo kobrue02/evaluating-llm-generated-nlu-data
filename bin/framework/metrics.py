@@ -311,7 +311,7 @@ def pos_tag_n_grams_diversity(hypotheses: list[str]) -> float:
         return 0.0
     for hypothesis in hypotheses:
         pos_tags = get_pos_tags(hypothesis)
-        n_grams = ngrams(pos_tags, 3)
+        n_grams = list(ngrams(pos_tags, 3))
         diversity = len(set(n_grams)) / len(n_grams)
         scores.append(diversity)
     return np.mean(scores)
