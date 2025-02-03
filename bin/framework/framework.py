@@ -119,7 +119,7 @@ class Framework:
             results[metric_name] = round(mean_levenshtein_distance(data, hypotheses), 3)
         elif metric == Metric.POS_TAG_N_GRAMS_DIVERSITY:
             results[metric_name] = round(
-                pos_tag_n_grams_diversity(data, hypotheses, 2), 3
+                pos_tag_n_grams_diversity(hypotheses), 3
             )
         self.logger.info(f"{metric_name}: {results[metric_name]}")
 
