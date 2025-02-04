@@ -66,8 +66,15 @@ class IntentClassifier:
         """
         X = self.vectorizer.transform(texts)
         return self.model.predict(X)
+    
+    def predict_proba(self, test_df):
+        X_test = self.vectorizer.transform(test_df["text"])
+        y_test = test_df["intent"]
+        y_pred = self.model.predict(X_test)
+        return y_test, y_pred
 
-    def evaluate(self, test_df):
+
+    def classification_report(self, test_df):
         """
         Evaluates the model on the test data.
 
@@ -77,10 +84,21 @@ class IntentClassifier:
         Returns:
             str: Classification report.
         """
-        X_test = self.vectorizer.transform(test_df["text"])
-        y_test = test_df["intent"]
-        y_pred = self.model.predict(X_test)
+        y_test, y_pred = self.predict_proba(test_df)
         return classification_report(y_test, y_pred)
+    
+    def evaluate(self, test_df):
+        """
+        Evaluates the model on the test data.
+
+        Args:
+            test_df (pd.DataFrame): Test data with columns 'text' and 'intent'.
+
+        Returns:
+            dict: Classification report.
+        """
+        y_test, y_pred = self.predict_proba(test_df)
+        return classification_report(y_test, y_pred, output_dict=True)
     
     def reset(self):
         """
