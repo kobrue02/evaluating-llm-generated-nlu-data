@@ -17,6 +17,9 @@ torch.random.manual_seed(0)
 
 
 def process_string(text: str) -> str:
+    # if the text starts with a number, remove it
+    if text[0].isdigit():
+        text = text.split(" ", 1)[1]
     # remove punctuation except letters, numbers, spaces, and umlauts
     text = re.sub(r"[^\w\säöüÄÖÜ]", "", text)
     # remove leading/trailing whitespaces
@@ -215,6 +218,15 @@ class DataGenerationModel:
             # Handle case where "Here are the queries" is in the text
             if "Here are the queries" in output_text:
                 output_text = output_text.split("Here are the queries")[1]
+
+            if "here are the 10 additional queries for the intent" in output_text:
+                # find the first \n\n after the phrase
+                start = output_text.find("here are the 10 additional queries for the intent")
+                end = output_text.find("\n\n", start)
+                output_text = output_text[end:]
+                output_queries = output_text.split("\n")
+                return [process_string(q) for q in output_queries if q.strip()]
+
 
             # Extract content between first '[' and last ']'
             start = output_text.find("[")
