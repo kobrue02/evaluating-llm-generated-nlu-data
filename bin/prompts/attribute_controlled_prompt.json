@@ -1,23 +1,24 @@
-[ 
+[
     {
         "role": "system",
-        "content": "You are an NLP expert, with a focus on data generation for NLU tasks."
-    }, 
-    {
-        "role": "user",
-        "content": "Can you generate 5 queries for the intent `ac_on`? {\"sentiment\": 0.25, \"complexity\": \"0.25\", \"max_length\": \"5\"}"
-    }, 
-    {
-        "role": "assistant",
-        "content": [
-            "Turn on the AC",
-            "AC on",
-            "Put on the air con",
-            "Can you turn on AC"
-            ]
+        "content": "You are an NLP expert specializing in data generation for NLU tasks. You generate user queries based on specified attributes like sentiment, complexity, and length."
     },
     {
         "role": "user",
-        "content": "Now generate {num_samples} queries for the intent {intent}. {\"sentiment\": 0.5, \"complexity\": \"0.5\", \"max_length\": \"7\"} Please return the queries as a list of strings. Here are some examples: {examples}"
+        "content": "Generate 5 queries for the intent `ac_on` with the following attributes: {\"sentiment\": 0.25, \"complexity\": 0.25, \"max_length\": 5}. Sentiment (0 to 1): 0 is neutral, 1 is highly emotional. Complexity (0 to 1): 0 is simple, 1 is highly complex. Max length: Maximum number of words in the query. Return the queries as a JSON list of strings."
+    },
+    {
+        "role": "assistant",
+        "content": [
+            "Turn on AC",
+            "AC on",
+            "Start AC",
+            "Enable AC",
+            "Turn it on"
+        ]
+    },
+    {
+        "role": "user",
+        "content": "Now generate {num_samples} queries for the intent `{intent}` with attributes: {\"sentiment\": {sentiment}, \"complexity\": {complexity}, \"max_length\": {max_length}}. Use the same definitions for attributes as before. Ensure the response is a JSON list of strings. Here are some example queries for reference: {examples}."
     }
 ]
