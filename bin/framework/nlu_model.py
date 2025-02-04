@@ -8,9 +8,13 @@ from collections import Counter
 
 
 class IntentClassifier:
-    def __init__(self):
+    def __init__(self, vectorizer=None, model=None):
         self.vectorizer = TfidfVectorizer()
         self.model = MultinomialNB()
+        if vectorizer:
+            self.vectorizer = vectorizer
+        if model:
+            self.model = model
 
     def split_dataset(self, df: pd.DataFrame) -> tuple:
         """
