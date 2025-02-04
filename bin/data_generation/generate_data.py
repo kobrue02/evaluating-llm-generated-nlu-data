@@ -203,6 +203,20 @@ class DataGenerationModel:
         if len(dataset.data) != len(dataset.labels):
             self.logger.error("Mismatch between queries and labels in dataset.")
             raise ValueError("Mismatch between queries and labels in dataset.")
+        
+    def _extract_enumerated_list(text: str):
+        """
+        Extracts enumerated list items from a string and removes the enumeration.
+        
+        Args:
+            text (str): The input string containing an enumerated list.
+            
+        Returns:
+            list: A list of extracted items without enumeration.
+        """
+        pattern = r'\d+\.\s*([^0-9].*?)(?=\s*\d+\.\s*|$)'  # Matches "1. text" but not "1.2"
+        matches = re.findall(pattern, text, re.DOTALL)
+        return [item.strip() for item in matches]
 
     def _parse_output(self, output_text: str) -> List[str]:
         """
@@ -215,6 +229,13 @@ class DataGenerationModel:
             List[str]: A list of parsed queries.
         """
         try:
+
+            # check if there is an enumareted list within the text
+            # if so, extract the list
+            if "1." in output_text:
+                output_queries = self._extract_enumerated_list(output_text)
+                return [process_string(q) for q in output_queries if q.strip()]
+    
             # Handle case where "Here are the queries" is in the text
             if "Here are the queries" in output_text:
                 output_text = output_text.split("Here are the queries")[1]

@@ -50,7 +50,9 @@ def load_df(dataset_name: str):
     gen_df.rename(columns={"query": "text"}, inplace=True)
     gen_df = gen_df[gen_df["text"].apply(lambda x: isinstance(x, str))]
     # remove any row that contains "note" or "these queries"
-    gen_df = gen_df[~gen_df["text"].str.contains("note|these queries", case=False)]
+    gen_df = gen_df[~gen_df["text"].str.contains("note|these queries|here are|Here are", case=False)]
+    # remove any row that has an empty text
+    gen_df = gen_df[gen_df["text"].apply(lambda x: len(x) > 0)]
     gen_df.reset_index(drop=True, inplace=True)
     return gen_df
 
