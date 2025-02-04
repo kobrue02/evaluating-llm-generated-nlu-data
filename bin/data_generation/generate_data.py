@@ -17,15 +17,12 @@ torch.random.manual_seed(0)
 
 
 def process_string(text: str) -> str:
-    # remove punctuation
-    text = re.sub(r"[^\w\s]", "", text)
-    # remove special characters
-    text = re.sub(r"[^a-zA-Z0-9\s]", "", text)
+    # remove punctuation except letters, numbers, spaces, and umlauts
+    text = re.sub(r"[^\w\säöüÄÖÜ]", "", text)
     # remove leading/trailing whitespaces
     text = text.strip()
     # lowercase
     return text.lower()
-
 
 class DataGenerationModel:
     def __init__(
