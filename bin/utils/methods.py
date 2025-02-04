@@ -49,6 +49,9 @@ def load_df(dataset_name: str):
     gen_df = pd.read_csv(f"data/{dataset_name}.csv", encoding="utf-8")
     gen_df.rename(columns={"query": "text"}, inplace=True)
     gen_df = gen_df[gen_df["text"].apply(lambda x: isinstance(x, str))]
+    # remove any row that contains "note" or "these queries"
+    gen_df = gen_df[~gen_df["text"].str.contains("note|these queries", case=False)]
+    gen_df.reset_index(drop=True, inplace=True)
     return gen_df
 
 def transform_dfs_to_metric_dfs(dfs: list[pd.DataFrame], dataset_names:list[str], columns=None):
