@@ -161,9 +161,6 @@ class DataGenerationModel:
                 num_samples=batch_size,
                 generated_queries=generated_queries,
                 examples=examples,
-                sentiment=0.5,
-                complexity=0.6,
-                max_length=10
             )
             try:
                 batch_data = self._generate_batch_data(prompt, intent)

@@ -22,7 +22,11 @@ def extract_variable_names(template: str) -> List[str]:
     return [
         field_name
         for _, field_name, _, _ in Formatter().parse(template)
-        if field_name is not None
+        if field_name is not None and field_name not in [
+            "sentiment",
+            "complexity",
+            "max_length",
+        ]
     ]
 
 
