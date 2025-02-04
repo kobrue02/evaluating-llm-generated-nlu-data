@@ -223,7 +223,7 @@ class DataGenerationModel:
                 "here are the 10" in output_text.lower() or 
                 "here are 10" in output_text.lower() or 
                 "intent" in output_text.lower() or
-                "hier sind 10" in output_text.lower()
+                "hier sind" in output_text.lower()
             ):
                 # find the first \n\n after the phrase
                 start = output_text.lower().find("here are")
