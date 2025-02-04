@@ -219,9 +219,9 @@ class DataGenerationModel:
             if "Here are the queries" in output_text:
                 output_text = output_text.split("Here are the queries")[1]
 
-            if "here are the 10 additional queries for the intent" in output_text.lower():
+            if "here are the 10" in output_text.lower() or "here are 10" in output_text.lower():
                 # find the first \n\n after the phrase
-                start = output_text.lower().find("here are the 10 additional queries for the intent")
+                start = output_text.lower().find("here are")
                 end = output_text.find("\n\n", start)
                 output_text = output_text[end:]
                 output_queries = output_text.split("\n")
