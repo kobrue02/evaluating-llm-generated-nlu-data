@@ -219,7 +219,12 @@ class DataGenerationModel:
             if "Here are the queries" in output_text:
                 output_text = output_text.split("Here are the queries")[1]
 
-            if "here are the 10" in output_text.lower() or "here are 10" in output_text.lower() or "intent" in output_text.lower():
+            if (
+                "here are the 10" in output_text.lower() or 
+                "here are 10" in output_text.lower() or 
+                "intent" in output_text.lower() or
+                "hier sind 10" in output_text.lower()
+            ):
                 # find the first \n\n after the phrase
                 start = output_text.lower().find("here are")
                 if start == -1:
