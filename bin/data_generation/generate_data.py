@@ -204,7 +204,7 @@ class DataGenerationModel:
             self.logger.error("Mismatch between queries and labels in dataset.")
             raise ValueError("Mismatch between queries and labels in dataset.")
         
-    def _extract_enumerated_list(text: str):
+    def _extract_enumerated_list(self, text: str):
         """
         Extracts enumerated list items from a string and removes the enumeration.
         
