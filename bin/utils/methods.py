@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import gaussian_kde
 
-from bin.utils.read_datasets import read_sipgate_dataset
-from bin.utils.clean_sipgate_dataset import clean_sipgate_dataset
 from bin.framework.framework import Framework
 
 
@@ -121,4 +119,41 @@ def results_to_dataframe(results: list[dict]):
     df["intent"] = df.index
     df.reset_index(drop=True, inplace=True)
 
+    return df
+
+def read_sipgate_dataset() -> pd.DataFrame:
+    """
+    Read the sipgate dataset and return a DataFrame with the specified columns.
+    If columns is None, return the full DataFrame.
+    """
+    dataset = pd.read_csv("data/sipgate_data.csv")
+    dataset.rename(columns={"phraseIntent": "intent"}, inplace=True)
+    dataset = dataset[
+        ["text", "intent", "occurrences", "phraseEntTypes", "annotations"]
+    ]
+    return dataset
+
+def clean_sipgate_dataset(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean the sipgate dataset by removing duplicates, intents with too few samples and samples with low occurrences.
+    """
+
+    # deduplicate text column
+    df = df.drop_duplicates(subset="text")
+
+    # keep only intents with more than 20 and less than 1000 samples
+    df = df.groupby("intent").filter(lambda x: len(x) > 100 and len(x) < 500)
+
+    # keep only intents that don't start with "_"
+    df = df[~df.intent.str.startswith("_")]
+
+    # for each intent, keep the 100 samples with highest value in occurrences column
+    df = df.groupby("intent").apply(lambda x: x.nlargest(25, "occurrences"))
+
+    df.reset_index(drop=True, inplace=True)
+    return df
+
+def load_sipgate_dataset():
+    df = read_sipgate_dataset()
+    df = clean_sipgate_dataset(df)
     return df
