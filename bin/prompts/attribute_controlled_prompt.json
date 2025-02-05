@@ -10,15 +10,15 @@
     {
         "role": "assistant",
         "content": [
-            "Turn on AC",
-            "AC on",
-            "Start AC",
-            "Enable AC",
-            "Turn it on"
+            "Mach die AC an",
+            "Klima an",
+            "Klimaanlage anmachen",
+            "Mach die Klima an",
+            "Klimaanlage einschalten bitte"
         ]
     },
     {
         "role": "user",
-        "content": "Now generate {num_samples} queries for the intent `{intent}` with attributes: sentiment: 0.4, complexity: 0.6, max_length: 10. Use the same definitions for attributes as before. Ensure the response is a JSON list of strings. Here are some example queries for reference: {examples}."
+        "content": "Now generate {num_samples} queries for the intent `{intent}` with attributes: sentiment: 0.4, complexity: 0.6, max_length: 10, language: German. Use the same definitions for attributes as before. Ensure the response is a JSON list of strings. Here are some example queries for reference: {examples}."
     }
 ]
