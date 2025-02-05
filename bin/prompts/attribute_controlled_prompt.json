@@ -5,7 +5,7 @@
     },
     {
         "role": "user",
-        "content": "Generate 5 queries for the intent `ac_on` with the following attributes: sentiment: 0.25, complexity: 0.25, max_length: 5}. Sentiment (0 to 1): 0 is neutral, 1 is highly emotional. Complexity (0 to 1): 0 is simple, 1 is highly complex. Max length: Maximum number of words in the query. Return the queries as a JSON list of strings."
+        "content": "Generate 5 queries for the intent `ac_on` with the following attributes: sentiment: 0.25, complexity: 0.25, max_length: 5. Sentiment (0 to 1): 0 is neutral, 1 is highly emotional. Complexity (0 to 1): 0 is simple, 1 is highly complex. Max length: Maximum number of words in the query. Return the queries as a JSON list of strings."
     },
     {
         "role": "assistant",
