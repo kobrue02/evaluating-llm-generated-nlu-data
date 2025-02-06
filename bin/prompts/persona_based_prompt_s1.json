@@ -5,6 +5,6 @@
     },
     {
         "role": "user",
-        "content": "Generate {num_samples} German queries for the intent {intent}. Please return the queries as a list of strings."
+        "content": "Generate {num_samples} German queries for the intent {intent}. Please return the queries as a list of strings. Here are some example queries for reference: {examples}."
     }
 ]
