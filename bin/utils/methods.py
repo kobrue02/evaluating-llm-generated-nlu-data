@@ -165,7 +165,7 @@ def load_sipgate_dataset():
 
 def clean_synthetic_dataset(df: pd.DataFrame) -> pd.DataFrame:
     # remove any row that contains "note" or "these queries"
-    df = df[~df["text"].str.contains("note|these queries|here are|Here are", case=False)]
+    df = df[~df["text"].str.contains("note|these queries|here are|Here are|json", case=False)]
     # remove any row that has an empty text
     df = df[df["text"].apply(lambda x: len(x) > 0)]
     df.reset_index(drop=True, inplace=True)
