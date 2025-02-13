@@ -192,12 +192,11 @@ class DataGenerationModel:
         examples = self.reference_dataset[
             self.reference_dataset.intent == intent
         ].text.tolist()
-        if prompt_id == "few_shot_simple":
-            return examples[:3]
-        elif prompt_id == "one_shot_simple":
+        if prompt_id == "one_shot_simple":
             return examples[:1]
-        return examples
-
+        else:
+            return examples[:3]
+    
     def _validate_dataset(self, dataset: DataSet):
         """Validate the dataset to ensure consistency."""
         if len(dataset.data) != len(dataset.labels):
