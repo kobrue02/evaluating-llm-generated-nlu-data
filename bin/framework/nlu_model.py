@@ -6,11 +6,13 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
 from collections import Counter
 
+from sklearn.neural_network import MLPClassifier
+
 
 class IntentClassifier:
     def __init__(self, vectorizer=None, model=None):
         self.vectorizer = TfidfVectorizer()
-        self.model = MultinomialNB()
+        self.model = MLPClassifier()
         if vectorizer:
             self.vectorizer = vectorizer
         if model:
@@ -70,13 +72,12 @@ class IntentClassifier:
         """
         X = self.vectorizer.transform(texts)
         return self.model.predict(X)
-    
+
     def predict_proba(self, test_df):
         X_test = self.vectorizer.transform(test_df["text"])
         y_test = test_df["intent"]
         y_pred = self.model.predict(X_test)
         return y_test, y_pred
-
 
     def classification_report(self, test_df):
         """
@@ -90,7 +91,7 @@ class IntentClassifier:
         """
         y_test, y_pred = self.predict_proba(test_df)
         return classification_report(y_test, y_pred)
-    
+
     def evaluate(self, test_df):
         """
         Evaluates the model on the test data.
@@ -103,13 +104,13 @@ class IntentClassifier:
         """
         y_test, y_pred = self.predict_proba(test_df)
         return classification_report(y_test, y_pred, output_dict=True)
-    
+
     def reset(self):
         """
         Resets the model.
         """
         self.vectorizer = TfidfVectorizer()
-        self.model = MultinomialNB()
+        self.model = MLPClassifier()
 
 
 if __name__ == "__main__":
